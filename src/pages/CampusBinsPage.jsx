@@ -11,6 +11,30 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
   const [filter, setFilter] = useState('ALL');
   const [dataMode, setDataMode] = useState('mock');
   const [ambientWeather, setAmbientWeather] = useState(null);
+  const [sensorReading, setSensorReading] = useState(liveReading);
+  const [sensorReachable, setSensorReachable] = useState(false);
+
+  useEffect(() => {
+    if (dataMode !== 'live') return undefined;
+    let cancelled = false;
+    const loadLatest = async () => {
+      try {
+        const binId = import.meta.env.VITE_LIVE_BIN_ID || 'B-101';
+        const response = await fetch(`/api/bin-readings/latest?bin_id=${encodeURIComponent(binId)}`);
+        if (!response.ok) throw new Error('Sensor API unavailable');
+        const data = await response.json();
+        if (!cancelled) {
+          setSensorReading(data.reading || null);
+          setSensorReachable(true);
+        }
+      } catch {
+        if (!cancelled) setSensorReachable(false);
+      }
+    };
+    loadLatest();
+    const timer = window.setInterval(loadLatest, 2000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [dataMode]);
 
   useEffect(() => {
     fetchCampusWeather().then(w => setAmbientWeather(w)).catch(() => {});
@@ -24,10 +48,12 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
   });
 
   // Integration point for the ESP32 feed: { fillPercent, measuredAt, deviceId, binId, binName }.
-  const reportedFill = Number(liveReading?.fillPercent);
-  const hasLiveReading = Number.isFinite(reportedFill) && reportedFill >= 0 && reportedFill <= 100;
+  const reportedFill = Number(sensorReading?.fillPercent);
+  const hasLiveReading = sensorReachable && Number.isFinite(reportedFill) && reportedFill >= 0 && reportedFill <= 100;
   const liveFillPercent = hasLiveReading ? Math.round(reportedFill) : null;
   const liveFillColor = liveFillPercent >= 80 ? '#ff7b83' : liveFillPercent >= 60 ? '#f3b84b' : '#2784ff';
+  const liveReadingAge = sensorReading?.measuredAt ? Date.now() - new Date(sensorReading.measuredAt).getTime() : Infinity;
+  const sensorIsFresh = hasLiveReading && liveReadingAge < 60000;
 
   return (
     <div className="space-y-6">
@@ -97,10 +123,10 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
           <div className="bin-live-heading">
             <div>
               <div className="bin-live-kicker"><span className={`bin-source-indicator ${hasLiveReading ? 'is-connected' : ''}`} /> Physical bin sensor</div>
-              <h3>{hasLiveReading ? (liveReading?.binName || liveReading?.binId || 'Dustbin fill level') : 'Waiting for sensor data'}</h3>
-              <p>{hasLiveReading ? `Sensor ${liveReading?.deviceId || 'ESP32'}${liveReading?.measuredAt ? ` · Updated ${new Date(liveReading.measuredAt).toLocaleString()}` : ''}` : 'The live percentage will appear here when the ESP32 ultrasonic reading is connected.'}</p>
+              <h3>{hasLiveReading ? (sensorReading?.binName || sensorReading?.binId || 'Dustbin fill level') : 'Waiting for sensor data'}</h3>
+              <p>{hasLiveReading ? `Sensor ${sensorReading?.deviceId || 'ESP32'} · Updated ${new Date(sensorReading.measuredAt).toLocaleString()}` : 'Connect the ESP32 to the same Wi-Fi network and send a distance reading to the laptop.'}</p>
             </div>
-            <span className={`bin-live-status ${hasLiveReading ? 'is-connected' : ''}`}>{hasLiveReading ? 'Sensor connected' : 'Not connected'}</span>
+            <span className={`bin-live-status ${sensorIsFresh ? 'is-connected' : ''}`}>{sensorIsFresh ? 'Receiving data' : hasLiveReading ? 'Signal stale' : 'Waiting for sensor'}</span>
           </div>
           <div className="bin-live-reading" aria-live="polite">
             <div className="bin-live-percent" style={{ color: hasLiveReading ? liveFillColor : 'var(--text-3)' }}>
@@ -109,7 +135,7 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
             <div className="bin-live-meter" role="progressbar" aria-label="Live dustbin fill level" aria-valuemin="0" aria-valuemax="100" aria-valuenow={hasLiveReading ? liveFillPercent : undefined}>
               <div style={{ width: `${liveFillPercent ?? 0}%`, background: liveFillColor }} />
             </div>
-            <div className="bin-live-caption">{hasLiveReading ? `${liveFillPercent}% full` : 'No live reading yet'}</div>
+            <div className="bin-live-caption">{hasLiveReading ? `${liveFillPercent}% full · ${Math.round(sensorReading.spaceLeftPercent ?? (100 - reportedFill))}% capacity left${Number.isFinite(Number(sensorReading.freeSpaceCm)) ? ` · ${sensorReading.freeSpaceCm} cm to waste` : ''}` : 'No live reading yet'}</div>
           </div>
         </section>
       ) : (

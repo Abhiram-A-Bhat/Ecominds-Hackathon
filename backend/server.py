@@ -7,7 +7,7 @@ import requests
 import re
 from fastapi import FastAPI, HTTPException, File, UploadFile, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from PIL import Image
 
 def _load_env_file():
@@ -103,6 +103,17 @@ class AudioPayload(BaseModel):
     filename: str = "recording.webm"
     language: str = "en"
 
+class BinSensorReading(BaseModel):
+    device_id: str = Field(default="ESP32-bin-01", min_length=1, max_length=64)
+    bin_id: str = Field(default="B-101", min_length=1, max_length=32)
+    bin_name: str = Field(default="Live ESP32 Dustbin", max_length=100)
+    distance_cm: float = Field(ge=2, le=500)
+    bin_height_cm: float = Field(gt=0, le=500)
+
+# Latest reading per physical bin. A database is unnecessary for the local demo;
+# a restart clears this cache and the sensor repopulates it on its next upload.
+latest_bin_readings = {}
+
 @app.get("/health")
 def health_check():
     return {
@@ -119,6 +130,30 @@ def health_check():
             "Predictive Time-Series Bin Surge Forecasting"
         ]
     }
+
+@app.post("/api/bin-readings")
+def receive_bin_reading(payload: BinSensorReading):
+    """Accept one ultrasonic distance sample and convert it to a fill percentage."""
+    if payload.distance_cm > payload.bin_height_cm + 10:
+        raise HTTPException(status_code=422, detail="Distance is outside the configured bin height")
+    fill_percent = round(max(0, min(100, (payload.bin_height_cm - payload.distance_cm) / payload.bin_height_cm * 100)), 1)
+    reading = {
+        "deviceId": payload.device_id,
+        "binId": payload.bin_id,
+        "binName": payload.bin_name,
+        "distanceCm": round(payload.distance_cm, 1),
+        "binHeightCm": round(payload.bin_height_cm, 1),
+        "freeSpaceCm": round(max(0, payload.distance_cm), 1),
+        "fillPercent": fill_percent,
+        "spaceLeftPercent": round(100 - fill_percent, 1),
+        "measuredAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    latest_bin_readings[payload.bin_id] = reading
+    return {"success": True, "reading": reading}
+
+@app.get("/api/bin-readings/latest")
+def get_latest_bin_reading(bin_id: str = "B-101"):
+    return {"reading": latest_bin_readings.get(bin_id)}
 
 # 1. Computer Vision YOLO26 Endpoint
 @app.post("/api/detect")
@@ -724,10 +759,6 @@ async def generate_speech_post(payload: TTSPayload):
         print(f">>> [Neural TTS] Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("server:app" if os.path.exists("server.py") else "backend.server:app", host="127.0.0.1", port=8000, reload=True)
-
 @app.get("/api/voice/tts")
 async def generate_speech_get(text: str, voice: str = "en-US-JennyNeural"):
     """GET endpoint to stream neural speech directly to HTML5 Audio."""
@@ -757,7 +788,7 @@ async def generate_speech_get(text: str, voice: str = "en-US-JennyNeural"):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app" if os.path.exists("server.py") else "backend.server:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("server:app" if __package__ in (None, "") else "backend.server:app", host="0.0.0.0", port=8000, reload=True)
 
 
 
