@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "web", "runtimeExecutable": "node", "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "5174"], "port": 5174 },
+    { "name": "web-attach", "url": "http://localhost:5175", "port": 5175 }
+  ]
+}
