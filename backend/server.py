@@ -5,7 +5,11 @@ import base64
 import json
 import requests
 import re
-from fastapi import FastAPI, HTTPException, File, UploadFile, Response
+import sqlite3
+import uuid
+from contextlib import contextmanager
+from urllib.parse import unquote
+from fastapi import FastAPI, HTTPException, File, UploadFile, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image
@@ -44,6 +48,36 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+FEEDBACK_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ecominds_feedback.sqlite3")
+
+@contextmanager
+def feedback_db():
+    connection = sqlite3.connect(FEEDBACK_DB)
+    connection.row_factory = sqlite3.Row
+    try:
+        yield connection
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+with feedback_db() as db:
+    db.execute("""CREATE TABLE IF NOT EXISTS student_feedback (
+        id TEXT PRIMARY KEY,
+        category TEXT NOT NULL,
+        message TEXT NOT NULL,
+        location TEXT NOT NULL DEFAULT '',
+        anonymous INTEGER NOT NULL DEFAULT 0,
+        reporter_id TEXT NOT NULL,
+        reporter_name TEXT NOT NULL,
+        reporter_usn TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'OPEN',
+        created_at TEXT NOT NULL,
+        updated_at TEXT
+    )""")
 
 # Global YOLO model holder
 yolo_model = None
@@ -110,6 +144,12 @@ class BinSensorReading(BaseModel):
     distance_cm: float = Field(ge=2, le=500)
     bin_height_cm: float = Field(gt=0, le=500)
 
+class StudentFeedbackPayload(BaseModel):
+    category: str = Field(min_length=1, max_length=64)
+    message: str = Field(min_length=10, max_length=2000)
+    location: str = Field(default="", max_length=160)
+    anonymous: bool = False
+
 # Latest reading per physical bin. A database is unnecessary for the local demo;
 # a restart clears this cache and the sensor repopulates it on its next upload.
 latest_bin_readings = {}
@@ -154,6 +194,75 @@ def receive_bin_reading(payload: BinSensorReading):
 @app.get("/api/bin-readings/latest")
 def get_latest_bin_reading(bin_id: str = "B-101"):
     return {"reading": latest_bin_readings.get(bin_id)}
+
+def feedback_record(row):
+    return {
+        "id": row["id"],
+        "category": row["category"],
+        "message": row["message"],
+        "location": row["location"],
+        "anonymous": bool(row["anonymous"]),
+        "reporterName": "Anonymous student" if row["anonymous"] else row["reporter_name"],
+        "reporterUsn": None if row["anonymous"] else row["reporter_usn"],
+        "status": row["status"],
+        "createdAt": row["created_at"],
+        "updatedAt": row["updated_at"],
+    }
+
+def feedback_session(request: Request):
+    raw_session = request.cookies.get("ecosphere_auth_user")
+    if not raw_session:
+        raise HTTPException(status_code=401, detail="Sign in to access student feedback")
+    try:
+        session = json.loads(unquote(raw_session))
+        if not session.get("id") or session.get("role") not in {"STUDENT", "ADMIN"}:
+            raise ValueError("Invalid session")
+        return session
+    except (ValueError, TypeError, json.JSONDecodeError):
+        raise HTTPException(status_code=401, detail="Sign in to access student feedback")
+
+@app.post("/api/student-feedback")
+def create_student_feedback(payload: StudentFeedbackPayload, request: Request):
+    session = feedback_session(request)
+    if session["role"] != "STUDENT":
+        raise HTTPException(status_code=403, detail="Only students can submit feedback")
+    feedback_id = f"FB-{uuid.uuid4().hex[:10].upper()}"
+    created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    with feedback_db() as db:
+        db.execute(
+            "INSERT INTO student_feedback (id, category, message, location, anonymous, reporter_id, reporter_name, reporter_usn, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (feedback_id, payload.category, payload.message.strip(), payload.location.strip(), int(payload.anonymous), session["id"], session.get("name", "Student"), session.get("usn", ""), created_at),
+        )
+        row = db.execute("SELECT * FROM student_feedback WHERE id = ?", (feedback_id,)).fetchone()
+    return {"feedback": feedback_record(row)}
+
+@app.get("/api/student-feedback")
+def list_student_feedback(request: Request):
+    session = feedback_session(request)
+    if session["role"] == "ADMIN":
+        with feedback_db() as db:
+            rows = db.execute("SELECT * FROM student_feedback ORDER BY created_at DESC").fetchall()
+    elif session["role"] == "STUDENT":
+        with feedback_db() as db:
+            rows = db.execute("SELECT * FROM student_feedback WHERE reporter_id = ? ORDER BY created_at DESC", (session["id"],)).fetchall()
+    else:
+        raise HTTPException(status_code=403, detail="Only students and admins can access student feedback")
+    return {"feedback": [feedback_record(row) for row in rows]}
+
+@app.patch("/api/student-feedback/{feedback_id}")
+def update_student_feedback(feedback_id: str, status: str, request: Request):
+    session = feedback_session(request)
+    if session["role"] != "ADMIN":
+        raise HTTPException(status_code=403, detail="Only admins can update feedback status")
+    if status not in {"IN_REVIEW", "RESOLVED"}:
+        raise HTTPException(status_code=422, detail="Status must be IN_REVIEW or RESOLVED")
+    updated_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    with feedback_db() as db:
+        result = db.execute("UPDATE student_feedback SET status = ?, updated_at = ? WHERE id = ?", (status, updated_at, feedback_id))
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Feedback report not found")
+        row = db.execute("SELECT * FROM student_feedback WHERE id = ?", (feedback_id,)).fetchone()
+    return {"feedback": feedback_record(row)}
 
 # 1. Computer Vision YOLO26 Endpoint
 @app.post("/api/detect")

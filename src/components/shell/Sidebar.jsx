@@ -129,11 +129,11 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`} aria-label="Sidebar">
-      <Link to="/" className="sb-brand" aria-label="Guardian Campus home">
+      <Link to="/" className="sb-brand" aria-label="Ecominds home">
         <BrandMark size={36} />
         <div className="sb-label" style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--text)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            Guardian Campus
+            Ecominds
           </div>
           <div style={{ fontSize: 10.5, color: 'var(--text-3)', fontWeight: 700, letterSpacing: '.06em' }}>
             RNSIT · CAMPUS OS

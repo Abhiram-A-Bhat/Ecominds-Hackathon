@@ -59,7 +59,7 @@ export const NaacAuditPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
           <div><span className="text-slate-500 font-bold block">Accreditation Criterion:</span> <strong className="text-slate-900 text-sm">NAAC 7.1.3</strong></div>
           <div><span className="text-slate-500 font-bold block">Assessing Agency:</span> <strong className="text-slate-900 text-sm">IQAC Green Audit Cell</strong></div>
-          <div><span className="text-slate-500 font-bold block">Software Platform:</span> <strong className="text-slate-900 text-sm">Guardian Campus OS</strong></div>
+          <div><span className="text-slate-500 font-bold block">Software Platform:</span> <strong className="text-slate-900 text-sm">Ecominds</strong></div>
           <div><span className="text-slate-500 font-bold block">Innovators:</span> <strong className="text-emerald-800 font-bold text-sm">Team ECO MINDS</strong></div>
         </div>
 

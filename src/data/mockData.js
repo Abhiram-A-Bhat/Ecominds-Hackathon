@@ -441,7 +441,7 @@ export const STAFF_LIFETIME_LEADERBOARD = [
   {
     rank: 1,
     name: "Dr. Kavitha S.",
-    designation: "NAAC Audit In-Charge & Guardian Campus Admin",
+    designation: "NAAC Audit In-Charge & Ecominds Admin",
     department: "CSE",
     lifetimePoints: 7600,
     auditsApproved: 84,

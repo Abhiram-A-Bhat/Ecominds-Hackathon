@@ -249,7 +249,7 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
                 </div>
                 <h3 className="text-base font-extrabold text-white">Camera Access Required</h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Guardian Campus AI needs access to your device camera to inspect waste items, detect hazardous components (such as lithium batteries & circuit boards), and guide you to the correct smart bin.
+                  Ecominds AI needs access to your device camera to inspect waste items, detect hazardous components (such as lithium batteries & circuit boards), and guide you to the correct smart bin.
                 </p>
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
                   <button

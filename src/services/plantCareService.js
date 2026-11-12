@@ -18,6 +18,7 @@ import { profileFor } from '../data/plantProfiles';
 
 const KEY = 'ecosphere_plantcare_v2'; // v2: 15 plants on real campus roads
 const H = 3600e3;
+const OVERSEER_TERM_MS = 14 * 24 * H;
 
 export const PLANT_RULES = {
   wateringReward: 10,
@@ -81,13 +82,13 @@ const seedPlants = (now) => [
 
 function fresh() {
   const now = Date.now();
-  return { plants: seedPlants(now), reports: [], overseer: null, pastOverseerCodes: [], offsetMs: 0 };
+  return { plants: seedPlants(now), reports: [], overseer: null, applications: [], pastOverseerCodes: [], offsetMs: 0 };
 }
 
 function load() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY));
-    if (raw && Array.isArray(raw.plants)) return raw;
+    if (raw && Array.isArray(raw.plants)) return { ...fresh(), ...raw, applications: Array.isArray(raw.applications) ? raw.applications : [] };
   } catch { /* fall through */ }
   return fresh();
 }
@@ -108,6 +109,16 @@ if (typeof window !== 'undefined') {
 }
 
 const now = () => Date.now() + (state.offsetMs || 0);
+
+function expireOverseerState() {
+  if (!state.overseer) return false;
+  const expiresAt = state.overseer.expiresAt || state.overseer.since + OVERSEER_TERM_MS;
+  if (Date.now() < expiresAt) return false;
+  state.pastOverseerCodes = [...(state.pastOverseerCodes || []), state.overseer.code];
+  state.overseer = null;
+  save();
+  return true;
+}
 
 function code() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -182,13 +193,15 @@ export function careStatus(p, t = now()) {
 }
 
 function snapshot() {
+  expireOverseerState();
   return {
     now: now(),
     offsetMs: state.offsetMs || 0,
     plants: state.plants.map(p => ({ ...p, lngLat: p.lngLat || PLANT_COORDS[p.id], schedule: scheduleOf(p) })),
     conditions: state.conditions,
     reports: state.reports.map(r => ({ ...r })),
-    seat: state.overseer ? { occupied: true, code: state.overseer.code, since: state.overseer.since } : { occupied: false },
+    applications: [...(state.applications || [])],
+    seat: state.overseer ? { occupied: true, code: state.overseer.code, since: state.overseer.since, expiresAt: state.overseer.expiresAt || state.overseer.since + OVERSEER_TERM_MS } : { occupied: false },
   };
 }
 
@@ -372,18 +385,52 @@ export const plantCareService = {
   // ── Overseer seat ─────────────────────────────────────────────────────────
   /** Is this user the Overseer? Only ever asked about yourself. */
   isOverseer(userId) {
+    expireOverseerState();
     return !!state.overseer && state.overseer.userId === userId;
   },
 
-  takeSeat(user) {
+  applyForOverseer(user) {
     state = load();
-    if (state.overseer) return { ok: false, message: 'The seat was taken a moment ago.' };
-    state.overseer = { userId: user.id, name: user.name, usn: user.usn, code: code(), since: now() };
+    if (!user || user.role !== 'STUDENT') return { ok: false, message: 'Only students can apply.' };
+    if (this.isOverseer(user.id)) return { ok: false, message: 'You already hold the Overseer seat.' };
+    if (state.applications.some(a => a.userId === user.id && a.status === 'APPLIED')) return { ok: false, message: 'Your application is already in the queue.' };
+    state.applications.push({ userId: user.id, name: user.name, usn: user.usn, appliedAt: Date.now(), status: 'APPLIED' });
     commit();
-    return { ok: true, code: state.overseer.code };
+    return { ok: true };
+  },
+
+  appointHighestApplicant(users) {
+    state = load();
+    expireOverseerState();
+    if (state.overseer) return { ok: false, message: 'The current term must end before another student can be appointed.' };
+    const userById = new Map((users || []).map(user => [user.id, user]));
+    const applicants = state.applications
+      .filter(application => application.status === 'APPLIED')
+      .map(application => ({ application, user: userById.get(application.userId) }))
+      .filter(candidate => candidate.user?.role === 'STUDENT')
+      .sort((a, b) => (b.user.credits || 0) - (a.user.credits || 0) || a.application.appliedAt - b.application.appliedAt);
+    if (!applicants.length) return { ok: false, message: 'There are no eligible applications to appoint.' };
+
+    const winner = applicants[0];
+    state.applications = state.applications.map(application => application.status !== 'APPLIED' ? application : {
+      ...application,
+      status: application.userId === winner.user.id ? 'SELECTED' : 'NOT_SELECTED',
+    });
+    const appointedAt = Date.now();
+    state.overseer = {
+      userId: winner.user.id,
+      name: winner.user.name,
+      usn: winner.user.usn,
+      code: code(),
+      since: appointedAt,
+      expiresAt: appointedAt + OVERSEER_TERM_MS,
+    };
+    commit();
+    return { ok: true, name: winner.user.name, points: winner.user.credits || 0, code: state.overseer.code };
   },
 
   leaveSeat(userId) {
+    expireOverseerState();
     if (!state.overseer || state.overseer.userId !== userId) return { ok: false };
     state.pastOverseerCodes = [...(state.pastOverseerCodes || []), state.overseer.code];
     state.overseer = null;
@@ -398,6 +445,12 @@ export const plantCareService = {
     state.overseer = null;
     commit();
     return { ok: true };
+  },
+
+  expireOverseer() {
+    if (!expireOverseerState()) return false;
+    notify();
+    return true;
   },
 
   /** Overseer files a report. The reporter's user id is never stored — only the seat code. */
@@ -469,3 +522,6 @@ export const plantCareService = {
     commit();
   },
 };
+
+// Enforce the 14-day term even while the user is on a different page.
+if (typeof window !== 'undefined') window.setInterval(() => plantCareService.expireOverseer(), 30_000);

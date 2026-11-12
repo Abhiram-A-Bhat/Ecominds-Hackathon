@@ -27,6 +27,7 @@ dist-ssr
 venv/
 __pycache__/
 *.pyc
+*.sqlite3
 
 # Secrets
 .env

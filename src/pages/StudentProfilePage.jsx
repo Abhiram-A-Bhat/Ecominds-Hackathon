@@ -40,7 +40,7 @@ export function StudentProfilePage() {
             {currentUser.designation || 'Faculty Administrator'} • {currentUser.department}
           </div>
           <p className="text-slate-400 text-xs leading-relaxed mb-6">
-            Official institutional administrator account for RNSIT Guardian Campus OS.
+            Official institutional administrator account for RNSIT Ecominds.
             You have full authorization to verify student e-waste drop-offs, award EcoCredits via the AI Intake Station, and approve Hand-Me-Downs donations.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -75,7 +75,7 @@ export function StudentProfilePage() {
             <span>/</span>
             <span className="text-slate-400">My Profile</span>
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight mt-1">👤 My Guardian Campus Profile</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight mt-1">👤 My Ecominds Profile</h1>
         </div>
         <button
           onClick={logout}

@@ -1,10 +1,10 @@
 #!/bin/bash
-# EcoSphere Campus OS — Launcher for macOS / Linux
+# Ecominds — Launcher for macOS / Linux
 
 set -e
 
 echo "==============================================================================="
-echo "               ECOSPHERE CAMPUS OS (RNSIT) — SYSTEM LAUNCHER"
+echo "                      ECOMINDS (RNSIT) — SYSTEM LAUNCHER"
 echo "==============================================================================="
 
 if [ ! -d "node_modules" ] || [ ! -d "venv" ]; then
@@ -36,7 +36,7 @@ fi
 
 echo ""
 echo "==============================================================================="
-echo "                ECOSPHERE CAMPUS OS (RNSIT) — RUNNING"
+echo "                       ECOMINDS (RNSIT) — RUNNING"
 echo "==============================================================================="
 echo " [+] Frontend:  http://localhost:5173/"
 echo " [+] AI Engine: http://127.0.0.1:8000/"

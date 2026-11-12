@@ -103,7 +103,7 @@ export function LoginPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36, animation: 'revealUp .6s var(--ease-out) both' }}>
             <BrandMark size={44} />
             <div>
-              <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: '-0.02em' }}>Guardian Campus</div>
+              <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: '-0.02em' }}>Ecominds</div>
               <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700, letterSpacing: '.08em' }}>RNSIT · CAMPUS OS</div>
             </div>
           </div>

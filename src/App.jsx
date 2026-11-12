@@ -49,6 +49,7 @@ import { CctvSentinelPage } from './pages/CctvSentinelPage';
 import { AdoptPlantPage } from './pages/AdoptPlantPage';
 import { OverseerPage } from './pages/OverseerPage';
 import { PlantReportsPage } from './pages/PlantReportsPage';
+import { StudentFeedbackPage } from './pages/StudentFeedbackPage';
 
 import { 
   INITIAL_BINS, 
@@ -189,7 +190,7 @@ function AppContent() {
       const prev = prevBins.find(b => b.id === bin.id);
       if (prev && prev.fillLevel < 80 && bin.fillLevel >= 80) {
         if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('🚨 Guardian Campus Alert: Bin Surge Detected', {
+          new Notification('🚨 Ecominds Alert: Bin Surge Detected', {
             body: `${bin.name} (${bin.block}) has reached ${bin.fillLevel}% — immediate collection needed.`,
             icon: '/brand/guardian-campus-shield.png',
             tag: bin.id,
@@ -244,7 +245,7 @@ function AppContent() {
   useEffect(() => {
     const route = getRoute(path, role || 'STUDENT');
     const pageTitle = path === '/login' ? 'Sign In' : route?.title || 'Not found';
-    document.title = `${pageTitle} — Guardian Campus RNSIT`;
+    document.title = `${pageTitle} — Ecominds RNSIT`;
   }, [path, role]);
 
   const handleEmptyBin = (binId) => {
@@ -368,6 +369,7 @@ function AppContent() {
     '/profile':      () => <StudentProfilePage />,
     '/adopt':        () => <AdoptPlantPage />,
     '/overseer':     () => <OverseerPage />,
+    '/feedback':     () => <StudentFeedbackPage />,
     '/plant-reports':() => <PlantReportsPage />,
   };
   const render = routeTable[path];

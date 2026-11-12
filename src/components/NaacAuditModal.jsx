@@ -55,7 +55,7 @@ export const NaacAuditModal = ({ isOpen, onClose }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
             <div><span className="text-slate-500 font-semibold">Audit Parameter:</span> <strong className="block text-slate-900">NAAC Criterion 7.1.3</strong></div>
             <div><span className="text-slate-500 font-semibold">Evaluating Body:</span> <strong className="block text-slate-900">RNSIT Green Cell & IQAC</strong></div>
-            <div><span className="text-slate-500 font-semibold">Tech Framework:</span> <strong className="block text-slate-900">Guardian Campus OS</strong></div>
+            <div><span className="text-slate-500 font-semibold">Tech Framework:</span> <strong className="block text-slate-900">Ecominds</strong></div>
             <div><span className="text-slate-500 font-semibold">Project Lead:</span> <strong className="block text-emerald-800 font-bold">Team ECO MINDS</strong></div>
           </div>
 

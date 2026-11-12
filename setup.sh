@@ -1,10 +1,10 @@
 #!/bin/bash
-# EcoSphere Campus OS — Automated System Setup for macOS / Linux
+# Ecominds — Automated System Setup for macOS / Linux
 
 set -e
 
 echo "==============================================================================="
-echo "               ECOSPHERE CAMPUS OS (RNSIT) — SYSTEM SETUP"
+echo "                      ECOMINDS (RNSIT) — SYSTEM SETUP"
 echo "==============================================================================="
 echo " This script will automatically configure and install all requirements:"
 echo "  1. Node.js dependencies (React 19 + Vite 8 + UI libraries)"
@@ -98,5 +98,5 @@ echo ""
 echo "==============================================================================="
 echo "                    SETUP COMPLETED SUCCESSFULLY!"
 echo "==============================================================================="
-echo " To start EcoSphere, simply run: ./start.sh"
+echo " To start Ecominds, simply run: ./start.sh"
 echo "==============================================================================="

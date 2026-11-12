@@ -60,7 +60,7 @@ export function MobileDrawer({ open, onClose }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 16px 8px' }}>
           <BrandMark size={34} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>Guardian Campus</div>
+            <div style={{ fontWeight: 900, fontSize: 16 }}>Ecominds</div>
             <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700 }}>{currentUser?.name} · <span style={{ color: roleMeta?.accent }}>{roleMeta?.title}</span></div>
           </div>
           <button type="button" className="tb-btn" onClick={onClose} aria-label="Close menu" style={{ padding: 0 }}>

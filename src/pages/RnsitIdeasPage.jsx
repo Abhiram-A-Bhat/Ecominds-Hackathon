@@ -825,7 +825,7 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
                 <div className="pt-2 flex items-center justify-between border-t border-slate-800">
                   <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    Fully Working in Guardian Campus
+                    Fully Working in Ecominds
                   </span>
 
                   <button

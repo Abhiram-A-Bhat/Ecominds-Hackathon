@@ -76,7 +76,7 @@ export const TraceabilityLedgerPage = () => {
       `Audit Hash (SHA-256): ${computedHashes[i] || 'computing...'}`,
       '---',
     ].join('\n')).join('\n');
-    const blob = new Blob([`Guardian Campus E-Waste Audit Ledger\nGenerated: ${new Date().toISOString()}\n\n${lines}`], { type: 'text/plain' });
+    const blob = new Blob([`Ecominds E-Waste Audit Ledger\nGenerated: ${new Date().toISOString()}\n\n${lines}`], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = 'ecosphere-audit-ledger.txt'; a.click();
@@ -122,7 +122,7 @@ export const TraceabilityLedgerPage = () => {
           </h2>
           <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
             In typical waste management, discarded electronics frequently get diverted to informal scrap burning. 
-            Guardian Campus binds every deposited item to a tamper-evident audit log, tracking it until raw precious metals (gold, copper, cobalt) are certified recovered.
+            Ecominds binds every deposited item to a tamper-evident audit log, tracking it until raw precious metals (gold, copper, cobalt) are certified recovered.
           </p>
         </div>
 

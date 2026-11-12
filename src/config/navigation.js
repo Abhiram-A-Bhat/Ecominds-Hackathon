@@ -23,6 +23,7 @@ import { LightbulbIcon as Lightbulb } from '@phosphor-icons/react/dist/csr/Light
 import { PlantIcon as Sprout } from '@phosphor-icons/react/dist/csr/Plant';
 import { EyeIcon as Eye } from '@phosphor-icons/react/dist/csr/Eye';
 import { ClipboardTextIcon as ClipboardCheck } from '@phosphor-icons/react/dist/csr/ClipboardText';
+import { ChatTextIcon as ChatText } from '@phosphor-icons/react/dist/csr/ChatText';
 
 export const ROLES = { STUDENT: 'STUDENT', STAFF: 'STAFF', ADMIN: 'ADMIN' };
 const { STUDENT, STAFF, ADMIN } = ROLES;
@@ -36,7 +37,7 @@ export const ROLE_LABEL = { STUDENT: 'Student', STAFF: 'Staff', ADMIN: 'Admin' }
 export const ROUTES = {
   // ── Shared by all three ────────────────────────────────────────────────
   '/': {
-    title: { STUDENT: 'Guardian Home', STAFF: 'Ranger Base', ADMIN: 'Warden Command' },
+    title: { STUDENT: 'Ecominds Home', STAFF: 'Ranger Base', ADMIN: 'Warden Command' },
     short: 'Home',
     desc: { STUDENT: 'Your impact, missions and campus pulse', STAFF: 'Today\'s field work and live alerts', ADMIN: 'Campus-wide telemetry and module launcher' },
     icon: LayoutDashboard, accent: '#34d399', roles: ALL,
@@ -87,6 +88,11 @@ export const ROUTES = {
     title: { STUDENT: 'Overseer Seat', ADMIN: 'Overseer Seat Control' }, short: 'Overseer',
     desc: { STUDENT: 'One anonymous student audits plant care', ADMIN: 'Seat status and term rotation — identity sealed' },
     icon: Eye, accent: '#e879f9', roles: [STUDENT, ADMIN],
+  },
+  '/feedback': {
+    title: { STUDENT: 'Student Feedback', ADMIN: 'Feedback Inbox' }, short: 'Feedback',
+    desc: { STUDENT: 'Report campus issues directly to the admin team', ADMIN: 'Review and resolve student concerns' },
+    icon: ChatText, accent: '#38bdf8', roles: [STUDENT, ADMIN],
   },
 
   // ── Staff + Admin ──────────────────────────────────────────────────────
@@ -142,7 +148,7 @@ export const NAV_GROUPS = {
     { label: 'Overview', items: ['/', '/profile'] },
     { label: 'Guardian Duty', items: ['/adopt', '/bounties', '/bins'] },
     { label: 'Circular Living', items: ['/exchange', '/mess', '/trees'] },
-    { label: 'Rewards & Roles', items: ['/leaderboard', '/overseer'] },
+    { label: 'Rewards & Roles', items: ['/leaderboard', '/overseer', '/feedback'] },
   ],
   STAFF: [
     { label: 'Overview', items: ['/'] },
@@ -154,7 +160,7 @@ export const NAV_GROUPS = {
     { label: 'Overview', items: ['/', '/admin'] },
     { label: 'Oversight', items: ['/admin-verify', '/cctv-sentinel', '/overseer', '/bins'] },
     { label: 'Circular Economy', items: ['/ewaste', '/exchange', '/traceability', '/trees'] },
-    { label: 'Reports', items: ['/audit', '/rnsit-matrix', '/leaderboard'] },
+    { label: 'Reports', items: ['/audit', '/rnsit-matrix', '/leaderboard', '/feedback'] },
   ],
 };
 

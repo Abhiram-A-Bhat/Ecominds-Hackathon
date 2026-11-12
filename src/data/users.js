@@ -11,7 +11,7 @@ export const MOCK_USERS = [
     id: 'admin-001',
     role: 'ADMIN',
     name: 'Dr. Kavitha S.',
-    designation: 'NAAC Audit In-Charge & Guardian Campus Admin',
+    designation: 'NAAC Audit In-Charge & Ecominds Admin',
     email: 'kavitha.s@rnsit.ac.in',
     username: 'admin',
     password: 'eco@admin2026',
@@ -256,7 +256,7 @@ export function findUserByCredentials(identifier, password) {
       xp: 850,
       level: 2,
       history: [
-        { id: 'h-welcome', action: 'Joined Guardian Campus — Welcome Grant', points: 200, date: new Date().toLocaleDateString('en-IN'), status: 'APPROVED', type: 'WELCOME' }
+        { id: 'h-welcome', action: 'Joined Ecominds — Welcome Grant', points: 200, date: new Date().toLocaleDateString('en-IN'), status: 'APPROVED', type: 'WELCOME' }
       ],
       pendingContributions: [],
       rewards: [],

@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
-title EcoSphere Campus OS — Automated System Setup
+title Ecominds — Automated System Setup
 
 echo ===============================================================================
-echo                ECOSPHERE CAMPUS OS (RNSIT) — SYSTEM SETUP
+echo                ECOMINDS (RNSIT) — SYSTEM SETUP
 echo ===============================================================================
 echo  This script will automatically configure and install all requirements:
 echo   1. Node.js dependencies (React 19 + Vite 8 + UI libraries)
@@ -160,7 +160,7 @@ echo    [v] FastAPI + YOLO26 Vision Backend
 echo    [v] Hermes Autonomous Agent Engine
 echo    [v] Real-time KSPCB Metal Valuation ^& Edge-TTS Speech Engine
 echo.
-echo  To start the entire EcoSphere Campus OS:
+echo  To start Ecominds:
 echo    👉 Simply double-click "start.bat" in this directory!
 echo ===============================================================================
 echo.

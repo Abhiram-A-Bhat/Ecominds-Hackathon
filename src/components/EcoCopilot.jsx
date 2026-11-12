@@ -13,10 +13,10 @@ export const EcoCopilot = ({ onActionTriggered }) => {
     {
       role: 'assistant',
       text: isAdmin
-        ? "👋 Hello! Guardian Campus Operations Assistant ready. Ask me to dispatch maintenance squads, verify student drop-offs, analyze energy telemetry, or review NAAC green audit criteria."
+        ? "👋 Hello! Ecominds Operations Assistant ready. Ask me to dispatch maintenance squads, verify student drop-offs, analyze energy telemetry, or review NAAC green audit criteria."
         : `👋 Hi ${currentUser?.name ? currentUser.name.split(' ')[0] : 'there'}! I'm your Campus Eco Assistant. Ask me anything about claiming free study gear, logging clean-plate meals, reporting tap leaks for points, or redeeming your EcoCredits!`,
       timestamp: 'Just now',
-      agent: isAdmin ? 'Hermes Operations Agent' : 'Guardian Campus Assistant'
+      agent: isAdmin ? 'Hermes Operations Agent' : 'Ecominds Assistant'
     }
   ]);
   const [input, setInput] = useState('');
@@ -446,7 +446,7 @@ export const EcoCopilot = ({ onActionTriggered }) => {
         role: 'assistant',
         text: "I recommend dropping old electronic parts into Locker #4 at the ECE Department for component testing and +50 EcoCredits!",
         timestamp: 'Just now',
-        agent: 'Guardian Campus Engine'
+        agent: 'Ecominds Engine'
       };
       setMessages(prev => [...prev, fallbackMsg]);
       speakText(fallbackMsg.text);
@@ -468,7 +468,7 @@ export const EcoCopilot = ({ onActionTriggered }) => {
             <span className="w-2.5 h-2.5 rounded-full bg-white block animate-ping absolute inset-0 opacity-75"></span>
             <span className="w-2.5 h-2.5 rounded-full bg-white block"></span>
           </div>
-          <span>{isAdmin ? 'Hermes Operations Copilot' : 'Guardian Campus Assistant'}</span>
+                  <span>{isAdmin ? 'Hermes Operations Copilot' : 'Ecominds Assistant'}</span>
           <span className="text-[9px] bg-black/40 text-emerald-200 px-2 py-0.5 rounded-full font-mono font-bold">
             {isAdmin ? 'ADMIN' : 'AI HELP'}
           </span>
@@ -484,7 +484,7 @@ export const EcoCopilot = ({ onActionTriggered }) => {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-sm text-white">{isAdmin ? 'Hermes Ops Copilot' : 'Guardian Campus Assistant'}</span>
+                  <span className="font-extrabold text-sm text-white">{isAdmin ? 'Hermes Ops Copilot' : 'Ecominds Assistant'}</span>
                   <span className={`text-[9px] px-1.5 rounded font-mono font-bold ${
                     agentMode === 'hermes' 
                       ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 

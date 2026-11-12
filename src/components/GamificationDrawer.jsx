@@ -194,7 +194,7 @@ export function GamificationDrawer({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 20 }}>🔥</span>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: '#e2f5ec', margin: 0, letterSpacing: '-0.02em' }}>
-                Guardian Campus Gamification Hub
+                Ecominds Gamification Hub
               </h2>
               <span style={{
                 background: 'rgba(245,158,11,0.15)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.3)',

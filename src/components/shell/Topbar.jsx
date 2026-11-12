@@ -194,7 +194,7 @@ export function Topbar({ userCredits, onOpenSearch, onOpenGamification, onOpenAc
       <button type="button" className="tb-btn show-lt-lg" onClick={onOpenDrawer} aria-label="Open navigation menu" style={{ padding: 0 }}>
         <Menu size={18} />
       </button>
-      <Link to="/" className="show-lt-lg hide-sm" aria-label="Guardian Campus home" style={{ display: 'flex' }}>
+      <Link to="/" className="show-lt-lg hide-sm" aria-label="Ecominds home" style={{ display: 'flex' }}>
         <BrandMark size={32} />
       </Link>
 

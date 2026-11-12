@@ -154,7 +154,7 @@ function OverseerConsole({ me, state, seatCode }) {
     <>
       <Hero icon={Eye} title="You are the Overseer">
         <p style={{ color: 'var(--text-2)', margin: 0, fontSize: 14.5, lineHeight: 1.6, maxWidth: 640 }}>
-          Walk campus, compare each plant with its care log, and report the ones being faked. Other students can never see that it's you — only the staff who verify your reports know.
+          Walk campus, compare each plant with its care log, and report the ones being faked. Other students see only your seat code; admins and staff reviewers can see your identity.
           Don't tell anyone; a known Overseer can be bribed.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
@@ -245,8 +245,14 @@ function OverseerConsole({ me, state, seatCode }) {
   );
 }
 
-function AdminSeatControl({ state }) {
+function AdminSeatControl({ state, users }) {
   const { seat, reports, now } = state;
+  const [selectionMessage, setSelectionMessage] = useState('');
+  const applicants = (state.applications || [])
+    .filter(application => application.status === 'APPLIED')
+    .map(application => ({ ...application, user: users.find(user => user.id === application.userId) }))
+    .filter(application => application.user?.role === 'STUDENT')
+    .sort((a, b) => (b.user.credits || 0) - (a.user.credits || 0) || a.appliedAt - b.appliedAt);
   const term = seat.occupied ? reports.filter(r => r.reporterCode === seat.code) : [];
   const upheld = reports.filter(r => r.status === 'UPHELD').length;
   const decided = reports.filter(r => r.status !== 'PENDING').length;
@@ -256,12 +262,20 @@ function AdminSeatControl({ state }) {
     plantCareService.vacateSeat();
   };
 
+  const appointHighest = () => {
+    const result = plantCareService.appointHighestApplicant(users);
+    setSelectionMessage(result.ok
+      ? `${result.name} was appointed with ${result.points.toLocaleString()} points.`
+      : result.message);
+  };
+
   return (
     <>
       <Hero icon={seat.occupied ? Lock : ShieldQuestion} title={seat.occupied ? 'The Overseer seat is filled' : 'The Overseer seat is vacant'}>
         <p style={{ color: 'var(--text-2)', margin: 0, fontSize: 14.5, lineHeight: 1.6, maxWidth: 640 }}>
-          One student at a time audits adopted plants anonymously. Identity is sealed even from Earth Wardens — you can see the seat code, its activity and outcomes, and rotate the term.
+          One student at a time audits adopted plants. Every term ends automatically after 14 days. When the seat is vacant, the applicant with the highest current EcoCredit points is appointed.
         </p>
+        {seat.occupied && seat.expiresAt && <p style={{ color: 'var(--text-2)', margin: '10px 0 0', fontSize: 13 }}>Term ends {new Date(seat.expiresAt).toLocaleString()}.</p>}
         {seat.occupied && (
           <button type="button" className="btn-ghost" onClick={vacate} style={{ marginTop: 16, padding: '10px 16px', fontSize: 13, color: '#fca5a5', borderColor: 'rgba(248,113,113,.35)' }}>
             <UserX size={15} /> End term & open the seat
@@ -281,50 +295,73 @@ function AdminSeatControl({ state }) {
           </div>
         ))}
       </div>
+      <section className="glass" style={{ borderRadius: 22, padding: 'clamp(18px, 3vw, 28px)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div><div className="eyebrow">Candidacy queue</div><h2 style={{ margin: '5px 0 0', color: 'var(--text)', fontSize: 20, fontWeight: 900 }}>Applicants ranked by points</h2></div>
+          <button type="button" className="btn-eco" disabled={seat.occupied || applicants.length === 0} onClick={appointHighest} style={{ padding: '10px 16px', opacity: seat.occupied || applicants.length === 0 ? .55 : 1 }}>
+            Appoint highest points
+          </button>
+        </div>
+        {selectionMessage && <p role="status" style={{ color: 'var(--text-2)', fontSize: 13, margin: '12px 0 0' }}>{selectionMessage}</p>}
+        {applicants.length ? (
+          <div style={{ display: 'grid', gap: 8, marginTop: 16 }}>
+            {applicants.map((applicant, index) => (
+              <div key={applicant.userId} style={{ display: 'grid', gridTemplateColumns: '36px minmax(0, 1fr) auto', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <span style={{ color: index === 0 ? '#fbbf24' : 'var(--text-3)', fontWeight: 900 }}>#{index + 1}</span>
+                <div><strong style={{ color: 'var(--text)', display: 'block' }}>{applicant.user.name}</strong><span style={{ color: 'var(--text-3)', fontSize: 12 }}>{applicant.user.usn || applicant.user.email || 'Student'} · Applied {new Date(applicant.appliedAt).toLocaleDateString()}</span></div>
+                <strong style={{ color: index === 0 ? '#fbbf24' : 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace' }}>{(applicant.user.credits || 0).toLocaleString()} pts</strong>
+              </div>
+            ))}
+          </div>
+        ) : <p style={{ color: 'var(--text-3)', fontSize: 13, margin: '16px 0 0' }}>No pending applications.</p>}
+      </section>
     </>
   );
 }
 
 export function OverseerPage() {
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, getAllUsers } = useAuth();
   const state = usePlantCare();
   const [msg, setMsg] = useState('');
   const amOverseer = !!currentUser && plantCareService.isOverseer(currentUser.id);
 
-  const take = () => {
-    const res = plantCareService.takeSeat(currentUser);
+  const myApplication = (state.applications || []).filter(application => application.userId === currentUser?.id).at(-1);
+
+  const apply = () => {
+    const res = plantCareService.applyForOverseer(currentUser);
     if (!res.ok) { setMsg(res.message); return; }
-    triggerEcoCelebration({ title: 'You took the Overseer oath', message: 'Your seat code is your only public identity. Keep the role to yourself.', points: 0, badge: res.code });
+    setMsg('Application submitted. When the seat is available, the applicant with the highest current points will be appointed.');
   };
 
   let body;
-  if (isAdmin) body = <AdminSeatControl state={state} />;
+  if (isAdmin) body = <AdminSeatControl state={state} users={getAllUsers()} />;
   else if (amOverseer) body = <OverseerConsole me={currentUser} state={state} seatCode={state.seat.code} />;
-  else if (state.seat.occupied) body = (
-    <Hero icon={Lock} title="The seat is taken">
-      <p style={{ color: 'var(--text-2)', margin: 0, fontSize: 14.5, lineHeight: 1.6, maxWidth: 620 }}>
-        Someone on campus is the Overseer right now. Their identity is hidden from students — it could be anyone you know. The best plan is simple: actually water your plant.
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
-        <span className="chip" style={{ color: ACCENT, fontFamily: 'JetBrains Mono, monospace' }}><Lock size={13} /> {state.seat.code}</span>
-        <span className="chip"><Clock size={13} /> Serving {fmt(state.now - state.seat.since)}</span>
-      </div>
-    </Hero>
-  );
   else body = (
-    <Hero icon={Eye} title="Become the Overseer">
-      <p style={{ color: 'var(--text-2)', margin: 0, fontSize: 14.5, lineHeight: 1.6, maxWidth: 640 }}>
-        The seat is open. Only one student can hold it at a time. You'll audit adopted plants and report anyone faking their care log with a photo; staff verify and the owner loses points.
-      </p>
-      <ul style={{ margin: '14px 0 18px', paddingLeft: 18, listStyle: 'disc', color: 'var(--text-2)', fontSize: 13.5, lineHeight: 1.8 }}>
-        <li>Other students never learn it's you. Only the staff who verify your reports see your name.</li>
-        <li>+{PLANT_RULES.overseerReward} for every report staff uphold, logged as a "stewardship bonus".</li>
-        <li>You can step down any time; admins can also rotate the seat.</li>
-      </ul>
-      <div style={{ maxWidth: 420 }}>
-        <SlideToAccept accent={ACCENT} label="Slide to take the oath" onAccept={take} />
-      </div>
-    </Hero>
+    <>
+      <Hero icon={state.seat.occupied ? Lock : Eye} title={state.seat.occupied ? 'The Overseer seat is filled' : 'Apply to become the Overseer'}>
+        <p style={{ color: 'var(--text-2)', margin: 0, fontSize: 14.5, lineHeight: 1.6, maxWidth: 640 }}>
+          {state.seat.occupied
+            ? `The current student serves a 14-day term. You can apply for the next appointment; the seat code ${state.seat.code} keeps the holder anonymous to students.`
+            : 'Submit an application to audit campus plant care. When an admin appoints the next Overseer, the eligible applicant with the highest current EcoCredit points is selected automatically.'}
+        </p>
+        {state.seat.occupied && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}><span className="chip"><Clock size={13} /> Serving {fmt(Date.now() - state.seat.since)}</span><span className="chip">Term ends {new Date(state.seat.expiresAt).toLocaleDateString()}</span></div>}
+        <ul style={{ margin: '14px 0 18px', paddingLeft: 18, listStyle: 'disc', color: 'var(--text-2)', fontSize: 13.5, lineHeight: 1.8 }}>
+          <li>Students only see the anonymized seat code.</li>
+          <li>Every appointment ends automatically after 14 days.</li>
+          <li>+{PLANT_RULES.overseerReward} for each plant report staff uphold.</li>
+        </ul>
+        {myApplication?.status === 'APPLIED' ? (
+          <span className="chip" style={{ color: '#fbbf24' }}><Clock size={13} /> Application submitted · awaiting appointment</span>
+        ) : myApplication?.status === 'NOT_SELECTED' ? (
+          <div><p style={{ color: 'var(--text-2)', fontSize: 13 }}>Another applicant had more points. You can apply again for the next appointment.</p><button type="button" className="btn-eco" onClick={apply} style={{ padding: '10px 16px' }}>Apply for next appointment</button></div>
+        ) : state.seat.occupied ? (
+          <button type="button" className="btn-eco" onClick={apply} style={{ padding: '10px 16px' }}>Apply for next appointment</button>
+        ) : (
+          <div style={{ maxWidth: 420 }}><SlideToAccept accent={ACCENT} label="Slide to submit application" onAccept={apply} /></div>
+        )}
+      </Hero>
+      {myApplication?.status === 'SELECTED' && <div className="chip" style={{ color: '#34d399' }}>Your application was selected.</div>}
+    </>
   );
 
   return (
