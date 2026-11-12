@@ -299,7 +299,7 @@ export const EcoCopilot = ({ onActionTriggered }) => {
 
     // 1. Studio-Grade Azure Neural TTS streaming via Edge-TTS
     try {
-      const audioUrl = `http://127.0.0.1:8000/api/voice/tts?text=${encodeURIComponent(cleanText.slice(0, 900))}&voice=${voiceToUse}`;
+      const audioUrl = `/api/voice/tts?text=${encodeURIComponent(cleanText.slice(0, 900))}&voice=${voiceToUse}`;
       const audio = new Audio(audioUrl);
       currentAudioRef.current = audio;
 
@@ -414,10 +414,20 @@ export const EcoCopilot = ({ onActionTriggered }) => {
         setMessages(prev => [...prev, botMsg]);
         speakText(data.reply);
       } else {
-        const res = await fetch("http://127.0.0.1:8000/api/copilot", {
+        const res = await fetch("/api/copilot", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: query })
+          body: JSON.stringify({
+            message: query,
+            user_context: {
+              name: currentUser?.name,
+              role: currentUser?.role,
+              credits: currentUser?.credits,
+              current_page: window.location.pathname,
+              history: messages.slice(-10).map(({ role, text }) => ({ role, content: text })),
+            },
+          }),
+          signal: AbortSignal.timeout(12000),
         });
 
         if (res.ok) {

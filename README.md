@@ -13,6 +13,32 @@ reports, plant care, recycling, and campus operations.
    `npm run dev -- --host 0.0.0.0 --port 5173`.
 6. Open [http://localhost:5173](http://localhost:5173).
 
+### Use a phone camera for waste classification
+
+1. Start both the FastAPI backend and Vite frontend on the laptop. The backend
+   listens on `0.0.0.0:8000`; the Vite dev server listens on `0.0.0.0:5173`.
+2. Connect the laptop and phone to the same Wi-Fi network. A phone hotspot also
+   works if both devices are connected to that hotspot.
+3. Find the laptop's local IPv4 address (`ipconfig` on Windows, `ip addr` on
+   Linux, or `ifconfig` on macOS). For example, if it is `192.168.1.20`, open
+   `http://192.168.1.20:5173` on the phone.
+4. Open **AI Source Segregator** and tap **Take Photo / Choose Image**. The
+   phone's rear camera opens. Capture the item; Ecominds compresses the still
+   image and sends it over `ws://<laptop-ip>:8000/ws/classify` for analysis.
+5. If the page cannot load, allow inbound TCP ports `5173` and `8000` in the
+   laptop firewall for the private Wi-Fi network. Do not use `localhost` on the
+   phone: that points to the phone itself.
+
+The CCTV screen uses stock demo footage, not an actual campus camera stream.
+The clip is [Pexels video 5823867](https://www.pexels.com/video/hallway-in-a-building-5823867/)
+and is labeled as stock footage in the player.
+
+Hermes chat and dispatch currently use the project's Groq-compatible backend
+adapter. The upstream Hermes Agent source is
+[NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent).
+The local Hermes binary is optional; without it, the backend reports
+`CLOUD_HYBRID` and uses the configured Groq API.
+
 The Windows `setup.bat` and `start.bat` scripts can install and launch the
 project as well.
 

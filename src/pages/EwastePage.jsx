@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { IconCpu, IconCheckCircle, IconMapPin, IconZap, IconAlertTriangle, IconDownload } from '../components/Icons';
-import { triggerConfetti } from '../utils/confetti';
+import { IconCpu, IconCheckCircle, IconZap } from '../components/Icons';
 import { triggerEcoCelebration } from '../utils/ecoCelebration';
 import { Link } from '../router/Router';
 import { actionMesh } from '../services/actionMeshService';
+import { useAuth } from '../contexts/AuthContext';
+
+const POINT_BASE = { phone: 40, laptop: 80, pcb: 25, battery: 30, accessory: 10 };
+const DEPOSIT_KEY = 'ecominds-ewaste-deposits-v1';
 
 const DEFAULT_VALUATION = {
   success: true,
@@ -30,10 +33,23 @@ const DEFAULT_VALUATION = {
   ]
 };
 
-export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUserCredits }) => {
+export const EwastePage = ({ salvagedItems, setSalvagedItems }) => {
+  const { getLiveUsers, adjustPoints } = useAuth();
   const [filter, setFilter] = useState('ALL');
-  const [newEwaste, setNewEwaste] = useState({ name: '', category: 'Development Boards', specs: '' });
+  const [newEwaste, setNewEwaste] = useState({ name: '', category: 'Development Boards', specs: '', weight: '', condition: 'Used - inspect before reuse', studentId: '' });
   const [depositSubmitted, setDepositSubmitted] = useState(false);
+  const [depositAnalysis, setDepositAnalysis] = useState(null);
+  const [pendingDeposits, setPendingDeposits] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(DEPOSIT_KEY) || '[]'); } catch { return []; }
+  });
+  const [pointOverrides, setPointOverrides] = useState({});
+  const students = (getLiveUsers?.() || []).filter(user => user.role === 'STUDENT');
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const monthlyApproved = pendingDeposits.filter(row => row.status === 'APPROVED' && row.approvedAt?.startsWith(monthKey));
+  const monthlyRecoveredValue = monthlyApproved.reduce((total, row) => {
+    const m = row.analysis?.recoverable_metals || {}; const r = valuationData?.rates || {};
+    return total + (m.copper_kg || 0) * r.copper_per_kg + (m.gold_g || 0) * r.gold_traces_per_gram + (m.cobalt_kg || 0) * r.cobalt_per_kg + (m.lithium_kg || 0) * r.lithium_carbonate_per_kg + (m.aluminium_kg || 0) * r.aluminium_per_kg;
+  }, 0);
 
   // Valuation state
   const [valuationData, setValuationData] = useState(DEFAULT_VALUATION);
@@ -49,7 +65,7 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
   // Attempt fetch of updated metal valuation if backend is active
   useEffect(() => {
     const controller = new AbortController();
-    fetch("http://127.0.0.1:8000/api/metal-valuation", { signal: controller.signal })
+    fetch("/api/metal-valuation", { signal: controller.signal })
       .then(r => r.json())
       .then(d => {
         if (d.success) setValuationData(d);
@@ -58,55 +74,61 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
     return () => controller.abort();
   }, []);
 
+  const runDepositAnalysis = async () => {
+    if (!newEwaste.name.trim()) return;
+    setIsAnalyzingComponent(true);
+    try {
+      const res = await fetch('/api/salvage-analysis', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_name: newEwaste.name, specs: `${newEwaste.specs}; condition: ${newEwaste.condition}; weight: ${newEwaste.weight} kg` }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error(`Analysis service returned ${res.status}`);
+      const data = await res.json();
+      setDepositAnalysis({ ...data.analysis, model: data.model });
+    } catch {
+      setDepositAnalysis({ salvageability_score: 5, components: [], recoverable_metals: {}, hazards: ['Backend unavailable; inspect item and use conservative estimate'], recommended_lab: 'Electronics Repair Bench', summary: 'Rules-based offline estimate.' });
+    } finally { setIsAnalyzingComponent(false); }
+  };
+
   const handleDepositSubmit = (e) => {
     e.preventDefault();
-    if (!newEwaste.name) return;
-
-    const newItem = {
-      id: `EW-${Math.floor(300 + Math.random() * 700)}`,
-      name: newEwaste.name,
-      category: newEwaste.category,
-      condition: "Student Deposit — Pending Admin Verification",
-      sourceDept: "Student Contribution",
-      salvagedBy: "Current Student (Eco-Verified)",
-      status: "Available for Student Checkout",
-      creditsCost: 0,
-      specs: newEwaste.specs || "Inspected & Safe",
-      claimCount: 0
+    if (!newEwaste.name.trim() || !depositAnalysis || !newEwaste.studentId) return;
+    const item = {
+      id: `EW-${Date.now()}`, name: newEwaste.name.trim(), category: newEwaste.category,
+      specs: newEwaste.specs, weightKg: Number(newEwaste.weight), condition: newEwaste.condition,
+      studentId: newEwaste.studentId, analysis: depositAnalysis, createdAt: new Date().toISOString(), status: 'PENDING',
     };
-
-    setSalvagedItems([newItem, ...salvagedItems]);
-    setUserCredits(prev => prev + 50);
+    const updated = [item, ...pendingDeposits];
+    localStorage.setItem(DEPOSIT_KEY, JSON.stringify(updated));
+    setPendingDeposits(updated);
     setDepositSubmitted(true);
+    triggerEcoCelebration({ title: `E-Waste Submitted: ${item.name}`, message: 'Deposit submitted for staff verification. Points will be awarded after approval.', points: 0 });
+  };
 
-    // Auto-create ticket in Autonomous Action Mesh
-    actionMesh.createTicket({
-      title: `E-Waste Deposited: ${newItem.name}`,
-      category: 'EWASTE_SALVAGE',
-      severity: newItem.category.includes('Hazardous') ? 'CRITICAL' : 'HIGH',
-      location: `ECE E-Waste Collection Point (12.9019° N, 77.5192° E)`,
-      detectedBy: 'Student Self-Submission Portal',
-      assignedTo: {
-        name: 'Dr. Nayana C P (ECE Lab Head) & KSPCB Recycler',
-        role: 'Certified Component Inspector',
-        id: 'RNS-LAB-02',
-        type: 'STAFF'
-      },
-      automatedResolution: `Component cross-listed to Pass-The-Torch Exchange and SHA-256 ledger.`,
-      impactMetric: 'Recovers valuable copper/gold trace alloys and prevents toxic landfill leaching',
-      targetEntityId: newItem.id,
-      interDependentLinks: [
-        { label: 'Pass-The-Torch Reuse', path: '/exchange', badge: 'Active Listing' },
-        { label: 'Cryptographic Ledger', path: '/traceability', badge: 'SHA-256' },
-        { label: 'NAAC Audit Record', path: '/audit', badge: 'Crit 7.1.3' }
-      ]
-    });
+  const suggestedPoints = (deposit) => {
+    const text = `${deposit.name} ${deposit.category}`.toLowerCase();
+    const base = text.includes('battery') ? POINT_BASE.battery : text.includes('laptop') ? POINT_BASE.laptop : text.includes('phone') ? POINT_BASE.phone : text.includes('pcb') || text.includes('board') ? POINT_BASE.pcb : POINT_BASE.accessory;
+    const metals = deposit.analysis?.recoverable_metals || {};
+    const rates = valuationData?.rates || {};
+    const value = (metals.copper_kg || 0) * rates.copper_per_kg + (metals.gold_g || 0) * rates.gold_traces_per_gram + (metals.cobalt_kg || 0) * rates.cobalt_per_kg + (metals.lithium_kg || 0) * rates.lithium_carbonate_per_kg + (metals.aluminium_kg || 0) * rates.aluminium_per_kg;
+    const hazardous = `${deposit.name} ${deposit.analysis?.hazards?.join(' ')}`.toLowerCase().match(/battery|lithium|crt|mercury/);
+    return Math.min(200, Math.round(base + (deposit.analysis?.salvageability_score || 0) * 5 + value / 20 + (hazardous ? 20 : 0)));
+  };
 
-    triggerEcoCelebration({
-      title: `E-Waste Submitted: ${newItem.name}`,
-      message: `Item logged & sent for admin verification. +50 EcoCredits credited instantly!`,
-      points: 50
-    });
+  const approveDeposit = (deposit, requestedPoints) => {
+    let latestDeposits = pendingDeposits;
+    try { latestDeposits = JSON.parse(localStorage.getItem(DEPOSIT_KEY) || '[]'); } catch { /* use current view state */ }
+    if (latestDeposits.find(row => row.id === deposit.id)?.status !== 'PENDING') return;
+    const points = Math.min(200, Math.max(0, Math.round(Number(requestedPoints ?? suggestedPoints(deposit)))));
+    adjustPoints?.(deposit.studentId, points, `E-waste: ${deposit.name}`, 'EWASTE');
+    const updated = latestDeposits.map(row => row.id === deposit.id ? { ...row, status: 'APPROVED', approvedPoints: points, approvedAt: new Date().toISOString() } : row);
+    localStorage.setItem(DEPOSIT_KEY, JSON.stringify(updated));
+    setPendingDeposits(updated);
+    const student = (getLiveUsers?.() || []).find(user => user.id === deposit.studentId);
+    const newItem = { id: deposit.id, name: deposit.name, category: deposit.category, condition: deposit.condition, sourceDept: 'Student Contribution', salvagedBy: student?.name || 'Student', status: 'Available for Student Checkout', creditsCost: 0, specs: deposit.specs || 'Inspected', claimCount: 0 };
+    setSalvagedItems(prev => [newItem, ...prev.filter(row => row.id !== newItem.id)]);
+    triggerEcoCelebration({ title: 'E-Waste Deposit Approved', message: `${points} EcoCredits awarded to ${student?.name || 'the student'}.`, points });
   };
 
   const handleClaim = (id) => {
@@ -138,18 +160,19 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
     setActiveAnalysis(null);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/salvage-analysis", {
+      const res = await fetch("/api/salvage-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item_name: item.name, specs: item.specs })
+        body: JSON.stringify({ item_name: item.name, specs: item.specs }),
+        signal: AbortSignal.timeout(15000),
       });
       const data = await res.json();
       setActiveAnalysis({ item: item.name, analysis: data.analysis, model: data.model });
     } catch (err) {
       setActiveAnalysis({
         item: item.name,
-        analysis: "• Salvageability Score: 8.5/10\n• Recoverable Components: Microcontroller core, 16MHz crystal, headers, AMS1117 regulator.\n• Lab Re-use: ECE & Robotics Capstone Projects.\n• Hazards: RoHS lead-free solder; safe for student bench work.",
-        model: "Groq GPT-OSS 120B Fallback"
+        analysis: { salvageability_score: 5, components: [], recoverable_metals: {}, hazards: ['Backend unavailable; perform manual safety inspection'], recommended_lab: 'Electronics Repair Bench', summary: 'Offline fallback. Do not award a final value until verified.' },
+        model: "Offline fallback"
       });
     } finally {
       setIsAnalyzingComponent(false);
@@ -198,8 +221,8 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
         </div>
 
         <div className="text-center bg-emerald-950/40 border border-emerald-500/20 rounded-xl px-5 py-3">
-          <div className="text-2xl font-black text-emerald-400">+50</div>
-          <div className="text-[10px] text-emerald-300 font-bold uppercase">EcoCredits on Deposit</div>
+          <div className="text-2xl font-black text-emerald-400">₹{monthlyRecoveredValue.toFixed(0)}</div>
+          <div className="text-[10px] text-emerald-300 font-bold uppercase">Approved recovery value this month</div>
         </div>
       </div>
 
@@ -292,8 +315,12 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
               ✕ Close
             </button>
           </div>
-          <div className="text-xs text-slate-300 leading-relaxed font-mono whitespace-pre-line bg-slate-950 p-4 rounded-xl border border-slate-800">
-            {activeAnalysis.analysis}
+          <div className="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+            <p><strong>Salvageability:</strong> {activeAnalysis.analysis?.salvageability_score}/10</p>
+            <p><strong>Summary:</strong> {activeAnalysis.analysis?.summary}</p>
+            <p><strong>Recommended lab:</strong> {activeAnalysis.analysis?.recommended_lab}</p>
+            <div><strong>Components:</strong> {(activeAnalysis.analysis?.components || []).map(part => `${part.name} (${part.reusable ? 'reuse' : 'recycle'}; ${part.lab_use})`).join(' · ') || 'No specific components identified'}</div>
+            <div className="text-amber-300"><strong>Hazards:</strong> {(activeAnalysis.analysis?.hazards || []).join(' · ') || 'None reported; inspect before handling'}</div>
           </div>
         </div>
       )}
@@ -398,11 +425,11 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
               Bring the item to the <strong className="text-emerald-400">ECE E-Waste Collection Point (Lab 104)</strong>. 
-              Admin verifies & lists it for junior reuse. You get +50 EcoCredits instantly.
+              Staff inspect the item and approve a points award calculated from its category, salvage score and estimated metals value.
             </p>
           </div>
           <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-xl font-bold font-mono">
-            +50 PTS REWARD
+            STAFF VERIFIED
           </span>
         </div>
 
@@ -411,13 +438,13 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
             <IconCheckCircle className="w-10 h-10 text-emerald-400 mx-auto" />
             <h4 className="text-lg font-black text-white">Deposit Logged! Pending Admin Verification</h4>
             <p className="text-xs text-emerald-300 max-w-md mx-auto">
-              Bring the item to <strong>ECE Lab 104</strong> during working hours (9AM–5PM Mon–Sat).
-              <strong> +50 EcoCredits</strong> have been credited to your account immediately!
+              The item is queued for inspection. No EcoCredits are awarded until a staff member approves it.
             </p>
             <button
               onClick={() => {
                 setDepositSubmitted(false);
-                setNewEwaste({ name: '', category: 'Development Boards', specs: '' });
+                setNewEwaste({ name: '', category: 'Development Boards', specs: '', weight: '', condition: 'Used - inspect before reuse', studentId: '' });
+                setDepositAnalysis(null);
               }}
               className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-lg transition"
             >
@@ -428,12 +455,17 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
           <form onSubmit={handleDepositSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <input
               type="text"
-              placeholder="Hardware / Item Name (e.g. Broken Arduino Mega, ESP32)"
+              placeholder="Item name (e.g. ESP32 board, laptop battery)"
               value={newEwaste.name}
               onChange={e => setNewEwaste({ ...newEwaste, name: e.target.value })}
               className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white col-span-1 md:col-span-1"
               required
             />
+            <input aria-label="Item weight in kilograms" type="number" min="0.01" step="0.01" placeholder="Weight (kg)" value={newEwaste.weight} onChange={e => setNewEwaste({ ...newEwaste, weight: e.target.value })} className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white" required />
+            <select aria-label="Depositing student" value={newEwaste.studentId} onChange={e => setNewEwaste({ ...newEwaste, studentId: e.target.value })} className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200" required>
+              <option value="">Select student by name / USN</option>
+              {students.map(student => <option key={student.id} value={student.id}>{student.name} {student.usn ? `· ${student.usn}` : ''}</option>)}
+            </select>
             <select
               value={newEwaste.category}
               onChange={e => setNewEwaste({ ...newEwaste, category: e.target.value })}
@@ -444,16 +476,42 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems, userCredits, setUs
               <option value="Batteries / Hazardous">Batteries / Hazardous</option>
               <option value="Peripherals & Cables">Peripherals & Cables</option>
             </select>
+            <select aria-label="Item condition" value={newEwaste.condition} onChange={e => setNewEwaste({ ...newEwaste, condition: e.target.value })} className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200">
+              <option>Working</option><option>Partially working</option><option>Non-working</option><option>Used - inspect before reuse</option>
+            </select>
+            <input type="text" placeholder="Specs / description" value={newEwaste.specs} onChange={e => setNewEwaste({ ...newEwaste, specs: e.target.value })} className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white" />
             <button
-              type="submit"
+              type="button" onClick={runDepositAnalysis} disabled={!newEwaste.name.trim() || isAnalyzingComponent}
               className="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2.5 rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-1.5"
             >
               <IconZap className="w-4 h-4 text-amber-300" />
-              Log E-Waste Deposit (+50 PTS)
+              {isAnalyzingComponent ? 'Analyzing…' : 'Analyze item'}
             </button>
+            {depositAnalysis && <div className="md:col-span-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3 text-xs text-slate-200">
+              <strong className="text-emerald-300">Analysis ready · {depositAnalysis.salvageability_score}/10 · {depositAnalysis.model || 'Groq / rules fallback'}</strong>
+              <p className="mt-1">{depositAnalysis.summary} Recommended: {depositAnalysis.recommended_lab}.</p>
+              {(depositAnalysis.hazards || []).length > 0 && <p className="mt-1 text-amber-300">Safety: {depositAnalysis.hazards.join(' · ')}</p>}
+              <button type="submit" className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 font-bold text-white">Submit for staff approval · suggested {suggestedPoints({ ...newEwaste, analysis: depositAnalysis })} pts</button>
+            </div>}
           </form>
         )}
       </div>
+
+      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 space-y-3">
+        <div className="flex items-center justify-between"><h3 className="font-bold text-white">E-waste deposit approvals</h3><span className="text-xs text-slate-400">{pendingDeposits.filter(row => row.status === 'PENDING').length} awaiting review</span></div>
+        {pendingDeposits.length === 0 ? <p className="text-xs text-slate-500">No student deposits have been submitted yet.</p> : pendingDeposits.map(deposit => {
+          const student = students.find(row => row.id === deposit.studentId);
+          const points = pointOverrides[deposit.id] ?? suggestedPoints(deposit);
+          const metals = deposit.analysis?.recoverable_metals || {};
+          const rates = valuationData?.rates || {};
+          const value = (metals.copper_kg || 0) * rates.copper_per_kg + (metals.gold_g || 0) * rates.gold_traces_per_gram + (metals.cobalt_kg || 0) * rates.cobalt_per_kg + (metals.lithium_kg || 0) * rates.lithium_carbonate_per_kg + (metals.aluminium_kg || 0) * rates.aluminium_per_kg;
+          return <div key={deposit.id} className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-xs text-slate-300"><strong className="text-white">{deposit.name}</strong> · {student?.name || 'Student'} · {deposit.weightKg} kg · {deposit.condition}<div className="mt-1 text-slate-400">Score {deposit.analysis?.salvageability_score}/10 · Estimated recovered value ₹{value.toFixed(2)} · {deposit.status}</div></div>
+            {deposit.status === 'PENDING' && <div className="flex items-center gap-2"><label className="text-[10px] text-slate-400">Points<input aria-label={`Approved points for ${deposit.name}`} type="number" min="0" max="200" value={points} onChange={e => setPointOverrides(prev => ({ ...prev, [deposit.id]: e.target.value }))} className="ml-2 w-20 rounded-md border border-slate-700 bg-slate-900 p-2 text-white" /></label><button onClick={() => approveDeposit(deposit, points)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Approve &amp; credit</button></div>}
+            {deposit.status === 'APPROVED' && <span className="text-xs font-bold text-emerald-300">+{deposit.approvedPoints} credits approved</span>}
+          </div>;
+        })}
+      </section>
     </div>
   );
 };

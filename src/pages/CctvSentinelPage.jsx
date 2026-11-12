@@ -225,6 +225,16 @@ export function CctvSentinelPage() {
 
             {/* Viewfinder Canvas / Camera Screen */}
             <div className="relative aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 flex flex-col justify-between p-4">
+              <video
+                key={activeFeed.id}
+                className="absolute inset-0 h-full w-full object-cover opacity-75"
+                src="https://videos.pexels.com/video-files/5823867/5823867-uhd_3840_2160_24fps.mp4"
+                autoPlay muted loop playsInline preload="metadata"
+                aria-label="Stock hallway footage used as a CCTV feed demonstration"
+              />
+              <div className="absolute bottom-12 left-4 z-10 rounded bg-black/80 px-2 py-1 text-[9px] font-mono text-amber-300">
+                STOCK CCTV-STYLE DEMO FOOTAGE · NOT LIVE CAMPUS VIDEO
+              </div>
               {/* Surveillance Overlay Data */}
               <div className="flex justify-between items-start pointer-events-none z-10">
                 <div className="space-y-1">

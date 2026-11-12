@@ -1,7 +1,7 @@
 // ─── Student Profile Page ────────────────────────────────────────────────────
 // Shows per-user EcoCredits, history, pending contributions, and rewards.
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from '../router/Router';
 
@@ -20,6 +20,17 @@ const LEVEL_NAMES = ['', 'Eco Seed 🌱', 'Green Sprout 🌿', 'Forest Guardian 
 export function StudentProfilePage() {
   const { currentUser, isAdmin, logout } = useAuth();
   const [tab, setTab] = useState('history');
+  const [ewasteDeposits, setEwasteDeposits] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ecominds-ewaste-deposits-v1') || '[]'); } catch { return []; }
+  });
+  useEffect(() => {
+    const refresh = () => {
+      try { setEwasteDeposits(JSON.parse(localStorage.getItem('ecominds-ewaste-deposits-v1') || '[]')); } catch { setEwasteDeposits([]); }
+    };
+    window.addEventListener('storage', refresh);
+    window.addEventListener('focus', refresh);
+    return () => { window.removeEventListener('storage', refresh); window.removeEventListener('focus', refresh); };
+  }, []);
 
   if (!currentUser) {
     return (
@@ -158,6 +169,7 @@ export function StudentProfilePage() {
           { id: 'pending', label: `⏳ Pending (${pending.length})` },
           { id: 'rewards', label: `🎁 Rewards (${currentUser.rewards?.length || 0})` },
           { id: 'handmedowns', label: `🤝 Pass-The-Torch (${(currentUser.handMeDowns?.donated?.length || 0) + (currentUser.handMeDowns?.received?.length || 0)})` },
+          { id: 'ewaste', label: `♻️ My E-waste (${ewasteDeposits.filter(d => d.studentId === currentUser.id).length})` },
         ].map(t => (
           <button 
             key={t.id} 
@@ -219,6 +231,19 @@ export function StudentProfilePage() {
             })
           )}
         </div>
+      )}
+
+      {tab === 'ewaste' && (
+        <section id="panel-ewaste" role="tabpanel" aria-labelledby="tab-ewaste" className="space-y-3">
+          {ewasteDeposits.filter(d => d.studentId === currentUser.id).length === 0 ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-400">No e-waste deposits have been logged for your account.</div>
+          ) : ewasteDeposits.filter(d => d.studentId === currentUser.id).map(deposit => (
+            <article key={deposit.id} className="rounded-xl border border-slate-800 bg-slate-900 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div><h3 className="font-bold text-white">{deposit.name}</h3><p className="text-xs text-slate-400">{deposit.weightKg} kg · {deposit.condition} · {new Date(deposit.createdAt).toLocaleDateString()}</p></div>
+              <div className="text-right"><span className={`text-xs font-bold ${deposit.status === 'APPROVED' ? 'text-emerald-300' : 'text-amber-300'}`}>{deposit.status === 'APPROVED' ? `+${deposit.approvedPoints} EcoCredits` : 'Awaiting staff approval'}</span><p className="text-[10px] text-slate-500">{deposit.analysis?.summary}</p></div>
+            </article>
+          ))}
+        </section>
       )}
 
       {/* Pending tab */}

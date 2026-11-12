@@ -9,7 +9,7 @@ import {
   IconLeaf, 
   IconDownload 
 } from '../components/Icons';
-import { PRESET_SCAN_ITEMS, classifyImageWithYOLO26 } from '../services/aiVisionService';
+import { PRESET_SCAN_ITEMS, classifyPhoneCapture } from '../services/aiVisionService';
 import { triggerEcoCelebration } from '../utils/ecoCelebration';
 import { Link } from '../router/Router';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,7 +20,7 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
   const [selectedStudentUsn, setSelectedStudentUsn] = useState(allStudents[0]?.usn || '1RN23IS005');
   const [customUsnInput, setCustomUsnInput] = useState('');
 
-  // Camera Permission and Stream States: 'prompt' | 'granted' | 'denied' | 'streaming' | 'unsupported'
+  // The laptop does not need a camera; the native photo picker opens the phone camera.
   const [cameraState, setCameraState] = useState('prompt');
   const [errorMessage, setErrorMessage] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -30,6 +30,43 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const phoneCaptureRef = useRef(null);
+
+  const compressCapture = (dataUrl) => new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.78));
+    };
+    image.onerror = () => reject(new Error('Could not prepare this photo.'));
+    image.src = dataUrl;
+  });
+
+  const handlePhoneCapture = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setErrorMessage('');
+    setIsAnalyzing(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const imageDataUrl = await compressCapture(String(reader.result || ''));
+        setCapturedSnapshot(imageDataUrl);
+        setScanResult(await classifyPhoneCapture(imageDataUrl));
+      } catch (error) {
+        setErrorMessage(error.message || 'Could not prepare or classify this photo. Check that the laptop backend is running.');
+      } finally {
+        setIsAnalyzing(false);
+        event.target.value = '';
+      }
+    };
+    reader.onerror = () => { setErrorMessage('Could not read this photo. Please try again.'); setIsAnalyzing(false); event.target.value = ''; };
+    reader.readAsDataURL(file);
+  };
 
   // Check initial browser permission status if supported
   useEffect(() => {
@@ -69,41 +106,11 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
     }
   }, [cameraState]);
 
-  // Explicit function to request permission & start stream
+  // Camera access is handled by the device's native photo picker. This works on
+  // phones over a campus LAN without requiring webcam permissions or HTTPS.
   const requestCameraPermission = async () => {
     setErrorMessage('');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraState('unsupported');
-      return;
-    }
-
-    try {
-      setCameraState('requesting');
-      // Try with ideal constraints first, then fall back to simple video:true for compatibility
-      let stream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      }
-      streamRef.current = stream;
-      // Set state to 'streaming' — the useEffect above will attach srcObject to videoRef
-      setCameraState('streaming');
-    } catch (err) {
-      console.warn("Camera permission error:", err);
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setCameraState('denied');
-        setErrorMessage('Camera access was denied in your browser settings.');
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setCameraState('unsupported');
-        setErrorMessage('No physical camera device was detected on your system.');
-      } else {
-        setCameraState('denied');
-        setErrorMessage(`Camera error: ${err.message || 'Unable to start camera'}`);
-      }
-    }
+    phoneCaptureRef.current?.click();
   };
 
   const stopCamera = () => {
@@ -117,22 +124,7 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
 
   // Capture frame from video and analyze
   const captureAndAnalyze = async () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    setIsAnalyzing(true);
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg');
-    setCapturedSnapshot(dataUrl);
-
-    // Call Ultralytics YOLO26 real-time vision inference
-    const result = await classifyImageWithYOLO26(dataUrl);
-    setScanResult(result);
-    setIsAnalyzing(false);
+    phoneCaptureRef.current?.click();
   };
 
   const handleSelectPreset = async (item) => {
@@ -189,6 +181,7 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
     <div className="space-y-6">
       {/* Hidden canvas for snapshot capture */}
       <canvas ref={canvasRef} className="hidden" />
+      <input ref={phoneCaptureRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoneCapture} aria-label="Take a waste photo with your phone camera" />
 
       {/* Breadcrumb Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
@@ -221,7 +214,7 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <IconCamera className="w-5 h-5 text-emerald-400" />
-              <span className="text-sm font-bold text-white">Live Camera Optical Viewfinder</span>
+              <span className="text-sm font-bold text-white">Phone Camera Photo Classifier</span>
             </div>
             {cameraState === 'streaming' && (
               <div className="flex items-center gap-2">
@@ -247,21 +240,21 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
                 <div className="w-14 h-14 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
                   <IconCamera className="w-7 h-7" />
                 </div>
-                <h3 className="text-base font-extrabold text-white">Camera Access Required</h3>
+                <h3 className="text-base font-extrabold text-white">Capture a photo to classify waste</h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Ecominds AI needs access to your device camera to inspect waste items, detect hazardous components (such as lithium batteries & circuit boards), and guide you to the correct smart bin.
+                  Open Ecominds on your phone to use its rear camera, or choose a photo from this device. The image is sent to the laptop vision service over WebSocket for classification.
                 </p>
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
                   <button
-                    onClick={requestCameraPermission}
+                    onClick={() => phoneCaptureRef.current?.click()}
                     className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2"
                   >
                     <IconCamera className="w-4 h-4" />
-                    Allow Camera Access
+                    Take Photo / Choose Image
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-500 italic">
-                  🔒 Privacy Guaranteed: Video frames are evaluated locally in client memory and never stored on remote servers.
+                  Only the captured image is sent for analysis; no continuous video stream is transmitted.
                 </p>
               </div>
             )}
@@ -286,11 +279,11 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
                   {errorMessage || 'Browser camera access is blocked. To re-enable, click the camera or padlock icon in your browser URL bar and change Camera to "Allow".'}
                 </p>
                 <div className="pt-2 flex items-center justify-center gap-2">
-                  <button
+                    <button
                     onClick={requestCameraPermission}
                     className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition"
                   >
-                    Retry Permission
+                    Open Camera / Choose Photo
                   </button>
                 </div>
                 <p className="text-[11px] text-emerald-400 font-semibold pt-1">
@@ -354,6 +347,18 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
                   </button>
                 </div>
               </>
+            )}
+
+            {capturedSnapshot && cameraState !== 'streaming' && <img src={capturedSnapshot} alt="Captured waste item" className="absolute inset-0 h-full w-full object-contain" />}
+
+            {capturedSnapshot && !isAnalyzing && (
+              <button
+                type="button"
+                onClick={() => { setCapturedSnapshot(null); phoneCaptureRef.current?.click(); }}
+                className="absolute bottom-3 right-3 z-20 rounded-lg border border-white/20 bg-slate-950/90 px-3 py-2 text-xs font-bold text-white shadow-lg"
+              >
+                Retake photo
+              </button>
             )}
 
             {/* Analyzing Spinner Overlay */}

@@ -102,7 +102,7 @@ export const classifyImageWithYOLO26 = async (imageDataUrl) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-    const res = await fetch("http://127.0.0.1:8000/api/detect", {
+    const res = await fetch("/api/detect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image: imageDataUrl }),
@@ -140,3 +140,39 @@ export const classifyImageWithYOLO26 = async (imageDataUrl) => {
   const randomIndex = Math.floor(Math.random() * PRESET_SCAN_ITEMS.length);
   return PRESET_SCAN_ITEMS[randomIndex];
 };
+
+export const classifyPhoneCapture = (imageDataUrl) => new Promise((resolve, reject) => {
+  const scheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const socket = new WebSocket(`${scheme}//${window.location.hostname}:8000/ws/classify`);
+  let settled = false;
+  const finish = (callback, value) => {
+    if (settled) return;
+    settled = true;
+    window.clearTimeout(timeout);
+    socket.close();
+    callback(value);
+  };
+  const timeout = window.setTimeout(() => {
+    finish(reject, new Error('Vision service timed out. Check that the laptop backend is running and both devices share the same Wi-Fi.'));
+  }, 20000);
+  socket.onopen = () => {
+    try { socket.send(JSON.stringify({ image: imageDataUrl })); }
+    catch { finish(reject, new Error('Could not send the photo to the laptop vision service.')); }
+  };
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      const match = data.best_match;
+      if (!data.success || !match) throw new Error(data.error || 'No image match returned');
+      finish(resolve, {
+        id: `yolo26-${Date.now()}`, name: match.name, category: match.category,
+        confidence: match.confidence, model: data.inference_engine || 'YOLO image classifier',
+        latency: `${data.inference_time_ms}ms`, isHazardous: match.isHazardous,
+        targetBin: match.targetBin, action: match.action, carbonSavedKg: match.carbonSavedKg,
+        ecoCredits: match.ecoCredits, emoji: match.isHazardous ? '🔋' : '♻️',
+        materials: ['Phone camera capture'], recyclingGuidance: 'Image classified by the Ecominds vision service over WebSocket.',
+      });
+    } catch (error) { finish(reject, error); }
+  };
+  socket.onerror = () => finish(reject, new Error('Could not connect to the laptop vision WebSocket. Check the laptop IP and backend.'));
+});

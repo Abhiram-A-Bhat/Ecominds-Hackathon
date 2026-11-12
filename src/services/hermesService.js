@@ -1,11 +1,13 @@
 // Hermes Autonomous Agent Integration Service for Guardian Campus OS (RNSIT)
 // Connects UI components with Hermes Agent v0.22.1 + Groq Qwen-27B backend
 
-const BACKEND_BASE = "http://127.0.0.1:8000";
+// Relative paths keep requests on the laptop that served this app, including phone clients.
+const BACKEND_BASE = "";
+const requestTimeout = () => ({ signal: AbortSignal.timeout(12000) });
 
 export async function getHermesStatus() {
   try {
-    const res = await fetch(`${BACKEND_BASE}/api/hermes/status`);
+    const res = await fetch(`${BACKEND_BASE}/api/hermes/status`, requestTimeout());
     if (res.ok) {
       return await res.json();
     }
@@ -30,7 +32,8 @@ export async function queryHermesAgent(message, userContext = {}) {
     const res = await fetch(`${BACKEND_BASE}/api/hermes/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, user_context: userContext })
+      body: JSON.stringify({ message, user_context: userContext }),
+      ...requestTimeout(),
     });
     if (res.ok) {
       return await res.json();
@@ -57,7 +60,8 @@ export async function dispatchWithHermesAgent(ticket) {
         location: ticket.location,
         severity: ticket.severity,
         detected_by: ticket.detectedBy || "Guardian Campus Sentinel"
-      })
+      }),
+      ...requestTimeout(),
     });
     if (res.ok) {
       return await res.json();
@@ -97,7 +101,8 @@ export async function transcribeVoiceAudio(audioBlob) {
     formData.append("file", audioBlob, "recording.webm");
     const res = await fetch(`${BACKEND_BASE}/api/voice/transcribe`, {
       method: "POST",
-      body: formData
+      body: formData,
+      ...requestTimeout(),
     });
     if (res.ok) {
       const data = await res.json();

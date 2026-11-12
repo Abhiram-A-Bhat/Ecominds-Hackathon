@@ -7,9 +7,10 @@ import requests
 import re
 import sqlite3
 import uuid
+import asyncio
 from contextlib import contextmanager
 from urllib.parse import unquote
-from fastapi import FastAPI, HTTPException, File, UploadFile, Response, Request
+from fastapi import FastAPI, HTTPException, File, UploadFile, Response, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image
@@ -362,6 +363,27 @@ def detect_waste(payload: ImagePayload):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.websocket("/ws/classify")
+async def classify_phone_capture(websocket: WebSocket):
+    """Classify phone-captured images sent as JSON over a short-lived WebSocket."""
+    await websocket.accept()
+    try:
+        while True:
+            payload = await websocket.receive_json()
+            image = payload.get("image") if isinstance(payload, dict) else None
+            if not image:
+                await websocket.send_json({"success": False, "error": "Expected an image data URL."})
+                continue
+            try:
+                result = await asyncio.to_thread(detect_waste, ImagePayload(image=image))
+                await websocket.send_json(result)
+            except HTTPException as exc:
+                await websocket.send_json({"success": False, "error": str(exc.detail)})
+            except Exception as exc:
+                await websocket.send_json({"success": False, "error": str(exc)})
+    except WebSocketDisconnect:
+        return
+
 # 2. Groq 120B Autonomous Voice & Chat Copilot with Strict Guardrails & Tool-Calling
 @app.post("/api/copilot")
 def copilot_chat(query: CopilotQuery):
@@ -396,6 +418,11 @@ CRITICAL SCOPE & GUARDRAIL ENFORCEMENT RULES:
             "model": GROQ_MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
+                *[
+                    {"role": item.get("role"), "content": str(item.get("content", ""))[:2000]}
+                    for item in query.user_context.get("history", [])[-10:]
+                    if isinstance(item, dict) and item.get("role") in {"user", "assistant"} and item.get("content")
+                ],
                 {"role": "user", "content": query.message}
             ],
             "temperature": 0.4,
@@ -439,41 +466,58 @@ CRITICAL SCOPE & GUARDRAIL ENFORCEMENT RULES:
 # 3. Deep Hardware Salvage Reasoning (Groq 120B)
 @app.post("/api/salvage-analysis")
 def deep_salvage_analysis(query: SalvageQuery):
-    prompt = f"""Act as a Senior Electronics Engineer and E-Waste Salvage Expert at an Engineering Institution.
-Analyze this discarded hardware item for student component reuse:
-Item: {query.item_name}
-Specs: {query.specs}
+    item = f"{query.item_name} {query.specs}".lower()
+    category_rules = [
+        (("battery", "li-ion", "lithium"), 4.0, ["Lithium cell (hazardous; isolate terminals)"], {"copper_kg": 0.01, "gold_g": 0.0, "cobalt_kg": 0.015, "lithium_kg": 0.025, "aluminium_kg": 0.01}, ["Fire and thermal-runaway risk", "Do not puncture or place in general waste"], "Certified battery recycling"),
+        (("laptop", "notebook"), 7.5, ["RAM and storage (if functional)", "Display assembly", "Copper heat pipes"], {"copper_kg": 0.12, "gold_g": 0.04, "cobalt_kg": 0.02, "lithium_kg": 0.08, "aluminium_kg": 0.18}, ["Check battery swelling", "PCB may contain lead solder"], "Computer Engineering / IoT Lab"),
+        (("phone", "mobile"), 6.5, ["Camera and vibration motor", "Display and connector modules"], {"copper_kg": 0.035, "gold_g": 0.025, "cobalt_kg": 0.015, "lithium_kg": 0.02, "aluminium_kg": 0.025}, ["Remove and isolate lithium battery"], "IoT / Embedded Systems Lab"),
+        (("pcb", "circuit", "development board", "arduino", "esp32"), 8.0, ["Microcontroller and passives", "Headers, regulators and connectors"], {"copper_kg": 0.06, "gold_g": 0.015, "cobalt_kg": 0.0, "lithium_kg": 0.0, "aluminium_kg": 0.01}, ["Avoid sanding or heating unknown solder"], "Robotics / VLSI Lab"),
+        (("charger", "adapter", "power supply"), 6.0, ["Copper transformer winding", "Rectifier and power components"], {"copper_kg": 0.04, "gold_g": 0.002, "cobalt_kg": 0.0, "lithium_kg": 0.0, "aluminium_kg": 0.01}, ["Capacitors may retain charge; inspect before handling"], "Power Electronics Lab"),
+        (("router", "modem"), 7.0, ["Wi-Fi module and antenna", "Ethernet connectors and PCB"], {"copper_kg": 0.05, "gold_g": 0.008, "cobalt_kg": 0.0, "lithium_kg": 0.0, "aluminium_kg": 0.02}, ["Remove backup battery if present"], "Networking / IoT Lab"),
+        (("keyboard", "mouse", "peripheral"), 5.0, ["USB cable and connector", "Switches and reusable keycaps"], {"copper_kg": 0.02, "gold_g": 0.001, "cobalt_kg": 0.0, "lithium_kg": 0.0, "aluminium_kg": 0.0}, [], "Computer Hardware Lab"),
+    ]
+    selected = next((rule for keys, *rule in category_rules if any(key in item for key in keys)), None)
+    if selected:
+        score, components, metals, hazards, lab = selected
+    else:
+        score, components, metals, hazards, lab = 5.5, ["Inspect board, connectors and reusable fasteners"], {"copper_kg": 0.02, "gold_g": 0.001, "cobalt_kg": 0.0, "lithium_kg": 0.0, "aluminium_kg": 0.01}, ["Confirm item is de-energized before inspection"], "Electronics Repair Bench"
 
-Provide:
-1. Salvageability Score (out of 10)
-2. Recoverable Valuable Components (e.g. Microcontroller ICs, voltage regulators, crystal oscillators, copper coils, headers)
-3. Laboratory Re-Use Recommendation (which lab/course can use it: IoT, Robotics, VLSI, Analog Circuits)
-4. Heavy Metal & Hazardous Precautions (Lead, Cadmium, Lithium)
-Format concisely in bullet points."""
+    prompt = f"""You are an e-waste salvage analyst. Analyze the item below and return ONLY a valid JSON object with these keys: salvageability_score (number 0-10), components (array of objects with name, reusable boolean, lab_use string), recoverable_metals (copper_kg, gold_g, cobalt_kg, lithium_kg, aluminium_kg non-negative numbers), hazards (array of strings), recommended_lab (string), summary (string). Use realistic conservative estimates; do not claim a component is safe without inspection.
+Item: {query.item_name}
+Specs: {query.specs}"""
 
     try:
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
         payload = {
             "model": GROQ_MODEL,
             "messages": [{"role": "user", "content": prompt}],
+            "response_format": {"type": "json_object"},
             "temperature": 0.3,
             "max_tokens": 400
         }
-        res = requests.post(GROQ_URL, headers=headers, json=payload, timeout=6)
+        res = requests.post(GROQ_URL, headers=headers, json=payload, timeout=12)
         if res.ok:
+            content = res.json()["choices"][0]["message"]["content"].strip()
+            content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content, flags=re.I)
+            analysis = json.loads(content)
+            analysis["salvageability_score"] = max(0, min(10, float(analysis.get("salvageability_score", score))))
+            analysis["recoverable_metals"] = {key: max(0, float(analysis.get("recoverable_metals", {}).get(key, 0) or 0)) for key in ("copper_kg", "gold_g", "cobalt_kg", "lithium_kg", "aluminium_kg")}
+            analysis["model"] = GROQ_MODEL
             return {
                 "success": True,
-                "analysis": res.json()["choices"][0]["message"]["content"],
-                "model": "Groq GPT-OSS 120B"
+                "analysis": analysis,
+                "model": GROQ_MODEL
             }
     except Exception:
         pass
 
-    return {
-        "success": True,
-        "analysis": f"• Salvageability Score: 8.5/10\n• Recoverable Components: Microcontroller core, 16MHz crystal, headers, AMS1117 regulator.\n• Lab Re-use: ECE & Robotics Capstone Projects.\n• Hazards: RoHS lead-free solder; safe for student bench work.",
-        "model": "Bundled Heuristic"
-    }
+    return {"success": True, "analysis": {
+        "salvageability_score": score,
+        "components": [{"name": name, "reusable": True, "lab_use": lab} for name in components],
+        "recoverable_metals": metals, "hazards": hazards,
+        "recommended_lab": lab,
+        "summary": "Rules-based estimate; inspect and weigh the item before reuse or recycling."
+    }, "model": "Rules-based fallback"}
 
 # 4. KSPCB Authorized Bangalore E-Waste Recycler & Live Metal Spot-Price Valuation
 @app.get("/api/metal-valuation")
@@ -513,8 +557,10 @@ def metal_valuation():
     return {
         "success": True,
         "total_valuation_inr": round(total_val, 2),
+        "total_value_inr": round(total_val, 2),
         "currency": "INR (₹)",
         "rates": market_rates,
+        "market_rates": market_rates,
         "campus_inventory": campus_inventory,
         "kspcb_recyclers": kspcb_recyclers
     }
@@ -714,6 +760,24 @@ Detected by: {query.detected_by}"""
         if res.ok:
             raw_text = res.json()["choices"][0]["message"]["content"]
             result = json.loads(raw_text)
+            if not isinstance(result, dict):
+                raise ValueError("Hermes returned a non-object dispatch response")
+            plan = result.get("mitigation_plan")
+            assignee = result.get("assigned_to")
+            if not isinstance(plan, list) or len(plan) < 3 or not isinstance(assignee, dict):
+                raise ValueError("Hermes dispatch response is missing required plan or assignee fields")
+            if assignee.get("type") not in {"STAFF", "STUDENT", "AUTOMATED"}:
+                assignee["type"] = "STAFF"
+            result["mitigation_plan"] = [str(step) for step in plan[:3]]
+            result["assigned_to"] = {
+                "name": str(assignee.get("name") or "Campus Operations Team"),
+                "role": str(assignee.get("role") or "Environmental Operations"),
+                "type": assignee["type"],
+            }
+            result["estimated_co2_saved_kg"] = max(0, float(result.get("estimated_co2_saved_kg", 0) or 0))
+            result["bounty_points"] = min(200, max(0, int(result.get("bounty_points", 0) or 0)))
+            result["resolution_summary"] = str(result.get("resolution_summary") or "Remediation plan prepared for operator verification.")
+            result["hermes_reasoning"] = str(result.get("hermes_reasoning") or "The response was normalized to the required dispatch structure.")
             return {
                 "success": True,
                 "ticket_id": query.ticket_id,

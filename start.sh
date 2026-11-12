@@ -14,15 +14,15 @@ fi
 
 source venv/bin/activate
 
-echo "[*] Starting Python FastAPI AI Backend on http://127.0.0.1:8000 ..."
+echo "[*] Starting Python FastAPI AI Backend on port 8000 (LAN enabled) ..."
 python backend/server.py &
 BACKEND_PID=$!
 
 echo "[*] Waiting for backend to initialize..."
 sleep 2
 
-echo "[*] Starting Vite Frontend on http://localhost:5173 ..."
-node ./node_modules/vite/bin/vite.js --port 5173 &
+echo "[*] Starting Vite Frontend on port 5173 (LAN enabled) ..."
+node ./node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5173 &
 FRONTEND_PID=$!
 
 sleep 2
@@ -40,6 +40,7 @@ echo "                       ECOMINDS (RNSIT) — RUNNING"
 echo "==============================================================================="
 echo " [+] Frontend:  http://localhost:5173/"
 echo " [+] AI Engine: http://127.0.0.1:8000/"
+echo " [+] Phone:     open http://<laptop-LAN-IP>:5173 on the same Wi-Fi"
 echo " [+] PID Backend: $BACKEND_PID | PID Frontend: $FRONTEND_PID"
 echo "==============================================================================="
 echo " Press Ctrl+C to terminate both servers."

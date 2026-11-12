@@ -10,7 +10,7 @@ export const CleanerOpsPage = ({ bins, onEmptyBin }) => {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("http://127.0.0.1:8000/api/predictive-bins", { signal: controller.signal })
+    fetch("/api/predictive-bins", { signal: controller.signal })
       .then(r => r.json())
       .then(d => { 
         if (d.success) setPredictions(d); 
