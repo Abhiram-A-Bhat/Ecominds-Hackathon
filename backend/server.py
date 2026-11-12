@@ -142,7 +142,9 @@ class BinSensorReading(BaseModel):
     bin_id: str = Field(default="B-101", min_length=1, max_length=32)
     bin_name: str = Field(default="Live ESP32 Dustbin", max_length=100)
     distance_cm: float = Field(ge=2, le=500)
-    bin_height_cm: float = Field(gt=0, le=500)
+    bin_height_cm: float | None = Field(default=None, gt=0, le=500)
+    empty_distance_cm: float | None = Field(default=None, gt=0, le=500)
+    full_distance_cm: float | None = Field(default=None, ge=0, le=500)
 
 class StudentFeedbackPayload(BaseModel):
     category: str = Field(min_length=1, max_length=64)
@@ -174,16 +176,34 @@ def health_check():
 @app.post("/api/bin-readings")
 def receive_bin_reading(payload: BinSensorReading):
     """Accept one ultrasonic distance sample and convert it to a fill percentage."""
-    if payload.distance_cm > payload.bin_height_cm + 10:
-        raise HTTPException(status_code=422, detail="Distance is outside the configured bin height")
-    fill_percent = round(max(0, min(100, (payload.bin_height_cm - payload.distance_cm) / payload.bin_height_cm * 100)), 1)
+    calibrated = payload.empty_distance_cm is not None or payload.full_distance_cm is not None
+    if calibrated:
+        if payload.empty_distance_cm is None or payload.full_distance_cm is None:
+            raise HTTPException(status_code=422, detail="Provide both empty_distance_cm and full_distance_cm")
+        if payload.empty_distance_cm <= payload.full_distance_cm:
+            raise HTTPException(status_code=422, detail="empty_distance_cm must be greater than full_distance_cm")
+        if payload.distance_cm > payload.empty_distance_cm + 10:
+            raise HTTPException(status_code=422, detail="Distance is outside the configured bin calibration")
+        usable_height_cm = payload.empty_distance_cm - payload.full_distance_cm
+        fill_percent = round(max(0, min(100, (payload.empty_distance_cm - payload.distance_cm) / usable_height_cm * 100)), 1)
+        free_space_cm = max(0, payload.distance_cm - payload.full_distance_cm)
+    else:
+        if payload.bin_height_cm is None:
+            raise HTTPException(status_code=422, detail="Provide bin_height_cm or both calibrated distances")
+        if payload.distance_cm > payload.bin_height_cm + 10:
+            raise HTTPException(status_code=422, detail="Distance is outside the configured bin height")
+        usable_height_cm = payload.bin_height_cm
+        fill_percent = round(max(0, min(100, (payload.bin_height_cm - payload.distance_cm) / usable_height_cm * 100)), 1)
+        free_space_cm = max(0, payload.distance_cm)
     reading = {
         "deviceId": payload.device_id,
         "binId": payload.bin_id,
         "binName": payload.bin_name,
         "distanceCm": round(payload.distance_cm, 1),
-        "binHeightCm": round(payload.bin_height_cm, 1),
-        "freeSpaceCm": round(max(0, payload.distance_cm), 1),
+        "binHeightCm": round(usable_height_cm, 1),
+        "emptyDistanceCm": payload.empty_distance_cm,
+        "fullDistanceCm": payload.full_distance_cm,
+        "freeSpaceCm": round(free_space_cm, 1),
         "fillPercent": fill_percent,
         "spaceLeftPercent": round(100 - fill_percent, 1),
         "measuredAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

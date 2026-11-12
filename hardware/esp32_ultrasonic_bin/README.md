@@ -1,76 +1,121 @@
-# ESP32 ultrasonic dustbin sensor
+# Send ESP32 dustbin readings to Ecominds
 
-This sketch measures the air gap between an HC-SR04 sensor mounted inside the
-bin lid and the top of the waste. The laptop backend converts that distance to
-fill and remaining-space percentages. The Live tab polls the backend every two
-seconds; the ESP32 uploads every five seconds.
+The ESP32 keeps printing sensor status to Arduino Serial Monitor and also sends
+each reading to the laptop's Ecominds API over Wi-Fi. No MQTT broker is needed
+for one ESP32: the laptop API receives a direct HTTP POST.
 
-## Connection model
+## 1. Start Ecominds on the laptop
 
-For this demo, the laptop runs the API and the ESP32 sends it ordinary HTTP
-requests over Wi-Fi. A message broker is a relay that many devices can publish
-to and subscribe from; it is useful for larger sensor networks but is extra
-infrastructure for this one-bin setup.
+Keep both processes running:
 
-Connect both devices to the same 2.4 GHz Wi-Fi network (ESP32 boards generally
-do not join 5 GHz-only networks). The simplest option is to enable the laptop's
-mobile hotspot and connect the ESP32 to it. Leave the browser on the
-laptop at `http://localhost:5173`. Set `API_URL` in the sketch to the laptop's
-hotspot IPv4 address on port 8000 (Windows Mobile Hotspot commonly uses
-`192.168.137.1`). A shared home/router Wi-Fi works too; use the laptop's local
-IPv4 address instead. Do not use `localhost` in `API_URL`: that would point
-back to the ESP32 itself. If Windows Firewall prompts you, allow Python on the
-Private network so the ESP32 can reach port 8000.
+```powershell
+py backend/server.py
+```
 
-## Wiring (ESP32 + HC-SR04)
+In a second PowerShell window, from the Ecominds project folder:
+
+```powershell
+npm run dev -- --host 0.0.0.0 --port 5173
+```
+
+Open [http://localhost:5173](http://localhost:5173), sign in, then go to
+**Campus Bins → Live**. Check that the API is running by opening
+`http://127.0.0.1:8000/health` on the laptop.
+
+## 2. Put the laptop and ESP32 on the same Wi-Fi
+
+Use a **2.4 GHz** network; ESP32 boards cannot connect to a 5 GHz-only Wi-Fi
+network. The laptop and ESP32 must join the same router or hotspot. The ESP32
+does not create a hotspot in this sketch.
+
+On this laptop, `ipconfig` currently reports Wi-Fi IPv4 address `192.168.1.43`.
+If both devices join that same router, use this API URL in the sketch:
+
+```cpp
+const char* API_URL = "http://192.168.1.43:8000/api/bin-readings";
+```
+
+If the laptop's address changes, run `ipconfig` again and use the IPv4 address
+for the adapter that the ESP32 is also connected through. Do not put
+`localhost` in `API_URL`; on the ESP32, localhost means the ESP32 itself.
+
+If you instead turn on Windows Mobile Hotspot on the laptop, connect the ESP32
+to that hotspot's Wi-Fi name and password. Find the hotspot adapter's address
+in `ipconfig` (often `192.168.137.1`) and use that address in `API_URL`.
+
+## 3. Allow the API through Windows Firewall
+
+The backend listens on port 8000 on the laptop's network interfaces so the
+ESP32 can reach it. If Windows asks, allow Python on **Private networks**. If
+it does not ask and uploads fail, open **Windows Security → Firewall & network
+protection → Allow an app through firewall**, then allow the Python executable
+on your Private network. Keep the current network profile set to Private.
+
+## 4. Check wiring and calibration
 
 | HC-SR04 | ESP32 |
 | --- | --- |
-| VCC | 5V / VIN |
+| VCC | regulated 5 V / VIN |
 | GND | GND |
 | TRIG | GPIO 5 |
 | ECHO | GPIO 18 through a voltage divider |
 
-The HC-SR04 ECHO signal is 5 V and can damage the ESP32's 3.3 V GPIO. Use a
-voltage divider (for example, 1 kΩ from ECHO to GPIO 18 and 2 kΩ from GPIO 18
-to GND), or a suitable level shifter. Share ground between sensor and ESP32.
+The HC-SR04 ECHO pin outputs 5 V; ESP32 GPIO is 3.3 V. Use a voltage divider
+(for example, 1 kΩ from ECHO to GPIO 18 and 2 kΩ from GPIO 18 to GND) or a
+logic-level shifter. Connect the sensor and ESP32 grounds together.
 
-## Configure and flash
+The sketch uses your calibration values:
 
-1. Open `esp32_ultrasonic_bin.ino` in Arduino IDE and install the ESP32 board
-   package.
-2. Replace `WIFI_SSID`, `WIFI_PASSWORD`, and `API_URL` with your network and
-   laptop API address. Set `BIN_HEIGHT_CM` to the measured distance from the
-   sensor face to the inside bottom of the empty bin. Set `BIN_ID` to the
-   desired ID (the web app defaults to `B-101`; set `VITE_LIVE_BIN_ID` in the
-   frontend `.env` to match a different ID).
-3. Select the ESP32 board and port, upload, then open Serial Monitor at
-   115200 baud. A successful upload prints an HTTP 200 response. The sketch
-   sends one sample every 30 seconds and then uses deep sleep to reduce battery
-   drain. The ESP32 reconnects to Wi-Fi after each wake.
-4. In the app, open **Campus Bins → Live**. The display shows fill percentage,
-   remaining capacity, sensor distance, and whether readings are arriving.
-
-The fill calculation is `clamp((bin height − measured distance) / bin height ×
-100, 0, 100)`. Keep the sensor aimed down at the waste surface, away from the
-bin walls. Irregular or soft waste can cause noisy ultrasonic readings. Power
-the HC-SR04 from a regulated 5 V rail and the ESP32 from its board's supported
-battery input; do not connect a bare lithium cell directly to 5 V/VIN.
-
-## API payload
-
-The ESP32 posts JSON to `POST /api/bin-readings`:
-
-```json
-{
-  "device_id": "ESP32-bin-01",
-  "bin_id": "B-101",
-  "bin_name": "Live ESP32 Dustbin",
-  "distance_cm": 28.4,
-  "bin_height_cm": 60
-}
+```cpp
+constexpr float EMPTY_DISTANCE_CM = 30.0f;
+constexpr float FULL_DISTANCE_CM = 5.0f;
 ```
 
-The latest reading is available at `GET /api/bin-readings/latest?bin_id=B-101`.
-The local backend keeps the latest reading in memory, so it clears when the
-backend restarts and repopulates after the next sensor upload.
+Measure from the sensor face. Set `EMPTY_DISTANCE_CM` to the reading when the
+bin is empty and `FULL_DISTANCE_CM` to the reading at the fill level you want
+to call 100%. Keep the sensor pointed straight down, away from the bin walls.
+
+## 5. Configure and upload the sketch
+
+1. Open `esp32_ultrasonic_bin.ino` in Arduino IDE and select your ESP32 board
+   and USB port.
+2. Change `WIFI_SSID` and `WIFI_PASSWORD` to the exact 2.4 GHz Wi-Fi
+   credentials. Set `API_URL` to the laptop address from step 2.
+3. Keep `BIN_ID` as `B-101` unless you also change `VITE_LIVE_BIN_ID` in the
+   laptop's `.env`. The project `.env` already uses `B-101`.
+4. Click **Upload**. Open **Tools → Serial Monitor**, set the speed to
+   **115200 baud**, and press the ESP32 reset button once if the output does
+   not start.
+5. Look for `Wi-Fi connected`, `HTTP response: 200`, and `Laptop accepted
+   reading`. The sketch takes 10 samples, filters out spikes using the median,
+   prints distance/fill/status to Serial Monitor, sends the reading, then sleeps
+   for 10 seconds to reduce ESP32 battery use.
+6. In Ecominds, open **Campus Bins → Live**. It polls every two seconds and
+   shows the latest percentage, remaining capacity, and usable space.
+
+The fill calculation used in both the sketch and backend is:
+
+```text
+clamp((empty distance - measured distance) /
+      (empty distance - full distance) * 100, 0, 100)
+```
+
+For example, a 17.5 cm reading with the 30 cm / 5 cm calibration is 50% full
+and has 12.5 cm of usable space remaining.
+
+## If it does not connect
+
+- `Wi-Fi connection failed`: check the SSID, password, and that the network is
+  2.4 GHz.
+- `HTTP response: -1` or another negative code: confirm the laptop IPv4 in
+  `API_URL`, verify `http://127.0.0.1:8000/health` works on the laptop, and
+  allow Python through the Private-network firewall.
+- HTTP `422`: check the calibration values and ensure `EMPTY_DISTANCE_CM` is
+  greater than `FULL_DISTANCE_CM`.
+- Ecominds says **Signal stale**: the API has not received a reading for 60
+  seconds. Check Serial Monitor for an HTTP 200 response.
+
+If you need faster updates while tuning, change `SEND_INTERVAL_SECONDS` from
+10 to 5. Deep sleep reduces ESP32 power draw, but the HC-SR04 itself remains
+powered; reducing sensor battery use further requires switching its VCC with a
+MOSFET or power switch.
