@@ -5,6 +5,7 @@ import { fetchCampusWeather } from '../services/weatherService';
 import { useAuth } from '../contexts/AuthContext';
 import { IconMapPin, IconCpu } from '../components/Icons';
 import { triggerConfetti } from '../utils/confetti';
+import { fetchLiveBinReading } from '../services/liveBinReadingsService';
 
 export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveReading = null }) => {
   const { isOperator: isAdmin } = useAuth();
@@ -20,11 +21,9 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
     const loadLatest = async () => {
       try {
         const binId = import.meta.env.VITE_LIVE_BIN_ID || 'B-101';
-        const response = await fetch(`/api/bin-readings/latest?bin_id=${encodeURIComponent(binId)}`);
-        if (!response.ok) throw new Error('Sensor API unavailable');
-        const data = await response.json();
+        const reading = await fetchLiveBinReading(binId);
         if (!cancelled) {
-          setSensorReading(data.reading || null);
+          setSensorReading(reading);
           setSensorReachable(true);
         }
       } catch {
@@ -124,7 +123,7 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
             <div>
               <div className="bin-live-kicker"><span className={`bin-source-indicator ${hasLiveReading ? 'is-connected' : ''}`} /> Physical bin sensor</div>
               <h3>{hasLiveReading ? (sensorReading?.binName || sensorReading?.binId || 'Dustbin fill level') : 'Waiting for sensor data'}</h3>
-              <p>{hasLiveReading ? `Sensor ${sensorReading?.deviceId || 'ESP32'} · Updated ${new Date(sensorReading.measuredAt).toLocaleString()}` : 'Connect the ESP32 to the same Wi-Fi network and send a distance reading to the laptop.'}</p>
+              <p>{hasLiveReading ? `Sensor ${sensorReading?.deviceId || 'ESP32'} · Updated ${new Date(sensorReading.measuredAt).toLocaleString()}` : 'The laptop bridge sends ESP32 readings to the shared live feed.'}</p>
             </div>
             <span className={`bin-live-status ${sensorIsFresh ? 'is-connected' : ''}`}>{sensorIsFresh ? 'Receiving data' : hasLiveReading ? 'Signal stale' : 'Waiting for sensor'}</span>
           </div>

@@ -157,6 +157,29 @@ class StudentFeedbackPayload(BaseModel):
 # a restart clears this cache and the sensor repopulates it on its next upload.
 latest_bin_readings = {}
 
+def forward_bin_reading_to_cloud(reading):
+    """Forward a local sensor reading to the shared cloud relay when configured."""
+    ingest_url = os.environ.get("BIN_CLOUD_INGEST_URL", "").strip()
+    ingest_token = os.environ.get("BIN_CLOUD_INGEST_TOKEN", "").strip()
+    if not ingest_url or not ingest_token:
+        return False
+
+    try:
+        response = requests.post(
+            ingest_url,
+            headers={"Authorization": f"Bearer {ingest_token}"},
+            json={"reading": reading},
+            timeout=4,
+        )
+        response.raise_for_status()
+        print(f"[Bin sensor] Forwarded {reading['binId']} reading to cloud.")
+        return True
+    except requests.RequestException as exc:
+        # Keep local sensor monitoring available if the internet or cloud relay
+        # is temporarily unavailable. The next ESP32 sample retries naturally.
+        print(f"[Bin sensor] Cloud relay unavailable: {exc}")
+        return False
+
 @app.get("/health")
 def health_check():
     return {
@@ -210,7 +233,8 @@ def receive_bin_reading(payload: BinSensorReading):
         "measuredAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     latest_bin_readings[payload.bin_id] = reading
-    return {"success": True, "reading": reading}
+    cloud_forwarded = forward_bin_reading_to_cloud(reading)
+    return {"success": True, "reading": reading, "cloudForwarded": cloud_forwarded}
 
 @app.get("/api/bin-readings/latest")
 def get_latest_bin_reading(bin_id: str = "B-101"):

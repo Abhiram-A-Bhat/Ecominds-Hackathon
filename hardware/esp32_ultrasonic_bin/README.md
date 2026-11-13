@@ -2,7 +2,9 @@
 
 The ESP32 keeps printing sensor status to Arduino Serial Monitor and also sends
 each reading to the laptop's Ecominds API over Wi-Fi. No MQTT broker is needed
-for one ESP32: the laptop API receives a direct HTTP POST.
+for one ESP32: the laptop API receives a direct HTTP POST. The laptop then
+forwards each reading over HTTPS to the shared cloud feed, so the deployed
+Ecominds site can show the same live value.
 
 ## 1. Start Ecominds on the laptop
 
@@ -21,6 +23,12 @@ npm run dev -- --host 0.0.0.0 --port 5173
 Open [http://localhost:5173](http://localhost:5173), sign in, then go to
 **Campus Bins → Live**. Check that the API is running by opening
 `http://127.0.0.1:8000/health` on the laptop.
+
+Keep the laptop connected to the internet and leave its FastAPI backend running.
+The backend reads its cloud-relay URL and private token from the ignored local
+`.env` file; never paste that token into the ESP32 sketch or commit it. The
+deployed page reads only the public, read-only cloud feed. It refreshes every
+two seconds; the ESP32 sends a new sample every ten seconds.
 
 ## 2. Put the laptop and ESP32 on the same Wi-Fi
 
@@ -90,8 +98,9 @@ to call 100%. Keep the sensor pointed straight down, away from the bin walls.
    reading`. The sketch takes 10 samples, filters out spikes using the median,
    prints distance/fill/status to Serial Monitor, sends the reading, then sleeps
    for 10 seconds to reduce ESP32 battery use.
-6. In Ecominds, open **Campus Bins → Live**. It polls every two seconds and
-   shows the latest percentage, remaining capacity, and usable space.
+6. In local Ecominds and on the deployed site, open **Campus Bins → Live**.
+   Both read the shared cloud feed and show the latest fill percentage and
+   percentage of capacity remaining.
 
 The fill calculation used in both the sketch and backend is:
 
@@ -100,8 +109,7 @@ clamp((empty distance - measured distance) /
       (empty distance - full distance) * 100, 0, 100)
 ```
 
-For example, a 17.5 cm reading with the 30 cm / 5 cm calibration is 50% full
-and has 12.5 cm of usable space remaining.
+For example, a 17.5 cm reading with the 30 cm / 5 cm calibration is 50% full.
 
 ## If it does not connect
 
@@ -114,6 +122,10 @@ and has 12.5 cm of usable space remaining.
   greater than `FULL_DISTANCE_CM`.
 - Ecominds says **Signal stale**: the API has not received a reading for 60
   seconds. Check Serial Monitor for an HTTP 200 response.
+- The local app updates but the deployed site does not: confirm the laptop has
+  internet access, the backend window is still running, and its log says
+  `[Bin sensor] Forwarded B-101 reading to cloud.` The cloud feed needs the
+  laptop bridge to stay online.
 
 If you need faster updates while tuning, change `SEND_INTERVAL_SECONDS` from
 10 to 5. Deep sleep reduces ESP32 power draw, but the HC-SR04 itself remains

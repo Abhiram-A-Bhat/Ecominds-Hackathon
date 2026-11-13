@@ -1,0 +1,11 @@
+#:schema https://supabase.com/schemas/config/v1.json
+project_id = "ecominds"
+
+[api]
+schemas = ["public", "graphql_public"]
+
+[db.migrations]
+enabled = true
+
+[functions.bin-sensor-ingest]
+verify_jwt = false
