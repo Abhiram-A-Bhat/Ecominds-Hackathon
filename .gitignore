@@ -33,6 +33,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+hardware/esp32_ultrasonic_bin/wifi_credentials.h
 
 # Vercel
 .vercel

@@ -30,11 +30,42 @@ The backend reads its cloud-relay URL and private token from the ignored local
 deployed page reads only the public, read-only cloud feed. It refreshes every
 two seconds; the ESP32 sends a new sample every ten seconds.
 
-## 2. Put the laptop and ESP32 on the same Wi-Fi
+## 2. Configure up to three Wi-Fi networks
 
-Use a **2.4 GHz** network; ESP32 boards cannot connect to a 5 GHz-only Wi-Fi
-network. The laptop and ESP32 must join the same router or hotspot. The ESP32
-does not create a hotspot in this sketch.
+The ESP32 scans for the saved networks at each wake, tries the strongest one
+first, and moves to the next saved network if it cannot join. Because this
+sketch uses deep sleep, it scans again for every new reading and will switch to
+another available saved network on the next wake.
+
+1. In the Arduino sketch folder, copy `wifi_credentials.h.example` and name the
+   copy `wifi_credentials.h`.
+2. Open `wifi_credentials.h` and enter the exact SSID and password for up to
+   three **2.4 GHz** networks. Leave an unused entry blank, for example:
+
+   ```cpp
+   {"Campus-WiFi", "campus-password"},
+   {"Phone-Hotspot", "hotspot-password"},
+   {"", ""}
+   ```
+
+3. Keep `wifi_credentials.h` beside `esp32_ultrasonic_bin.ino`. It is excluded
+   from Git because it contains Wi-Fi passwords. The ESP32 cannot connect to a
+   5 GHz-only network and this sketch does not create a hotspot.
+
+For readings to reach the laptop, the laptop must be reachable from whichever
+network the ESP32 selects. If the laptop uses different local IP addresses on
+the three networks, update `API_URL` to an address/hostname that resolves to
+the laptop on each network, or use a single shared network/hotspot for both.
+Automatic Wi-Fi selection only chooses the ESP32's access point; it cannot
+make a private laptop backend reachable across unrelated networks. The cloud
+relay also requires the laptop backend to remain online and connected to the
+internet.
+
+## 3. Ensure the laptop and ESP32 can reach each other
+
+The laptop and ESP32 should join the same router or hotspot for local HTTP
+uploads. The ESP32 sends its reading to the laptop's API URL; this is separate
+from simply being connected to Wi-Fi.
 
 On this laptop, `ipconfig` currently reports Wi-Fi IPv4 address `192.168.1.43`.
 If both devices join that same router, use this API URL in the sketch:
@@ -51,7 +82,7 @@ If you instead turn on Windows Mobile Hotspot on the laptop, connect the ESP32
 to that hotspot's Wi-Fi name and password. Find the hotspot adapter's address
 in `ipconfig` (often `192.168.137.1`) and use that address in `API_URL`.
 
-## 3. Allow the API through Windows Firewall
+## 4. Allow the API through Windows Firewall
 
 The backend listens on port 8000 on the laptop's network interfaces so the
 ESP32 can reach it. If Windows asks, allow Python on **Private networks**. If
@@ -59,7 +90,7 @@ it does not ask and uploads fail, open **Windows Security → Firewall & network
 protection → Allow an app through firewall**, then allow the Python executable
 on your Private network. Keep the current network profile set to Private.
 
-## 4. Check wiring and calibration
+## 5. Check wiring and calibration
 
 | HC-SR04 | ESP32 |
 | --- | --- |
@@ -83,12 +114,12 @@ Measure from the sensor face. Set `EMPTY_DISTANCE_CM` to the reading when the
 bin is empty and `FULL_DISTANCE_CM` to the reading at the fill level you want
 to call 100%. Keep the sensor pointed straight down, away from the bin walls.
 
-## 5. Configure and upload the sketch
+## 6. Configure and upload the sketch
 
 1. Open `esp32_ultrasonic_bin.ino` in Arduino IDE and select your ESP32 board
    and USB port.
-2. Change `WIFI_SSID` and `WIFI_PASSWORD` to the exact 2.4 GHz Wi-Fi
-   credentials. Set `API_URL` to the laptop address from step 2.
+2. Create and fill in `wifi_credentials.h` as described in step 2. Set
+   `API_URL` to the laptop address from step 3.
 3. Keep `BIN_ID` as `B-101` unless you also change `VITE_LIVE_BIN_ID` in the
    laptop's `.env`. The project `.env` already uses `B-101`.
 4. Click **Upload**. Open **Tools → Serial Monitor**, set the speed to
