@@ -6,7 +6,7 @@ import { AlarmIcon as AlarmClock } from '@phosphor-icons/react/dist/csr/Alarm';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from '../router/Router';
 import { usePlantCare } from '../hooks/usePlantCare';
-import { careStatus, plantCareService, PLANT_RULES } from '../services/plantCareService';
+import { careStatus, plantCareService, PLANT_RULES, plantCareBonus } from '../services/plantCareService';
 import { litres, perDays } from '../data/plantProfiles';
 import { PlantArt } from './PlantArt';
 
@@ -38,6 +38,7 @@ export function PlantReminder() {
   const { plants, now } = usePlantCare();
   const [seen, setSeen] = useState(read);
   const plant = plants.find(p => p.adopterId === currentUser?.id);
+  const wateringPoints = plant ? PLANT_RULES.wateringReward + plantCareBonus(plant).watering : PLANT_RULES.wateringReward;
 
   let stage = null, st = null;
   if (plant) {
@@ -58,7 +59,7 @@ export function PlantReminder() {
         new Notification(`🌱 ${COPY[stage].title(plant)}`, {
           body: stage === 'overdue'
             ? `Water ${litres(st.ml)} now. It has been offered to other Guardians, and you lose ${PLANT_RULES.missPenalty} points each further ${perDays(st.intervalHrs)} it stays dry.`
-            : `Give it ${litres(st.ml)} before ${fmtClock(st.dueAt, now)} for +${PLANT_RULES.wateringReward} EcoCredits.`,
+            : `Give it ${litres(st.ml)} before ${fmtClock(st.dueAt, now)} for +${wateringPoints} EcoCredits.`,
           tag: key,
         });
       } catch { /* some browsers need a service worker */ }
@@ -85,7 +86,7 @@ export function PlantReminder() {
             <strong style={{ color: '#7dd3fc' }}>{litres(st.ml)}</strong> at {plant.location}.{' '}
             {stage === 'overdue'
               ? <span style={{ color: '#fca5a5' }}>Deadline missed — other Guardians can now take it. −{PLANT_RULES.missPenalty} for each further {perDays(st.intervalHrs)}.</span>
-              : <>Due by {fmtClock(st.dueAt, now)} for +{PLANT_RULES.wateringReward}.</>}
+              : <>Due by {fmtClock(st.dueAt, now)} for +{wateringPoints}.</>}
           </div>
         </div>
         <button type="button" onClick={() => update({ dismissed: true })} aria-label="Dismiss reminder" style={{ background: 'none', border: 0, color: 'var(--text-3)', cursor: 'pointer', padding: 2 }}><X size={16} /></button>

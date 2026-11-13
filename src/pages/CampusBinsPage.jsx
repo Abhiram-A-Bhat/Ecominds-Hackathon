@@ -8,7 +8,7 @@ import { IconMapPin, IconCpu } from '../components/Icons';
 import { triggerConfetti } from '../utils/confetti';
 import { fetchLiveBinReading } from '../services/liveBinReadingsService';
 
-export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveReading = null }) => {
+export const CampusBinsPage = ({ bins, onEmptyBin, liveReading = null }) => {
   const { isOperator: isAdmin } = useAuth();
   const [filter, setFilter] = useState('ALL');
   const [dataMode, setDataMode] = useState('mock');
@@ -223,10 +223,9 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
                     {bin.eWasteAllowed && <div className="bg-blue-950/40 border border-blue-500/30 p-2 rounded-xl text-[11px] text-blue-300 flex items-center gap-2"><IconCpu className="w-4 h-4 text-blue-400 flex-shrink-0" /><span>Certified electronics &amp; circuit board drop-off depot.</span></div>}
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-                    <button onClick={() => onReportBinOverflow(bin.id)} aria-label={`Report overflow for ${bin.name} and earn 35 EcoCredits`} className="text-xs text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition-colors">⚡ Report Overflow (+35 PTS)</button>
-                    {isAdmin && <button onClick={() => { onEmptyBin(bin.id); triggerConfetti(); }} aria-label={`Admin action: Mark ${bin.name} as emptied`} className="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-bold px-3 py-1.5 rounded-xl transition">Clear Bin (Ground Ops)</button>}
-                  </div>
+                  {isAdmin && <div className="mt-5 pt-3 border-t border-slate-800 flex justify-end">
+                    <button onClick={() => { onEmptyBin(bin.id); triggerConfetti(); }} aria-label={`Admin action: Mark ${bin.name} as emptied`} className="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-bold px-3 py-1.5 rounded-xl transition">Clear Bin (Ground Ops)</button>
+                  </div>}
                 </div>
               );
             })}

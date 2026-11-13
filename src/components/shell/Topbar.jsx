@@ -5,15 +5,7 @@ import { FlameIcon as Flame } from '@phosphor-icons/react/dist/csr/Flame';
 import { RobotIcon as Bot } from '@phosphor-icons/react/dist/csr/Robot';
 import { WalletIcon as Wallet } from '@phosphor-icons/react/dist/csr/Wallet';
 import { CaretRightIcon as ChevronRight } from '@phosphor-icons/react/dist/csr/CaretRight';
-import { CaretDownIcon as ChevronDown } from '@phosphor-icons/react/dist/csr/CaretDown';
-import { SignOutIcon as LogOut } from '@phosphor-icons/react/dist/csr/SignOut';
-import { UserCircleIcon as UserRound } from '@phosphor-icons/react/dist/csr/UserCircle';
-import { TrophyIcon as Trophy } from '@phosphor-icons/react/dist/csr/Trophy';
-import { ShieldCheckIcon as ShieldCheck } from '@phosphor-icons/react/dist/csr/ShieldCheck';
 import { ListIcon as Menu } from '@phosphor-icons/react/dist/csr/List';
-import { PlantIcon as Sprout } from '@phosphor-icons/react/dist/csr/Plant';
-import { ClipboardTextIcon as ClipboardCheck } from '@phosphor-icons/react/dist/csr/ClipboardText';
-import { EyeIcon as Eye } from '@phosphor-icons/react/dist/csr/Eye';
 import { ArrowsClockwiseIcon as Repeat2 } from '@phosphor-icons/react/dist/csr/ArrowsClockwise';
 import { INTERFACES } from '../../config/demoAccounts';
 import { Link, useRouter } from '../../router/Router';
@@ -114,64 +106,26 @@ function InterfaceSwitcher() {
 }
 
 function UserMenu() {
-  const { currentUser, role, roleMeta, isStudent, logout } = useAuth();
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
-  }, [open]);
-
+  const { currentUser, roleMeta } = useAuth();
+  const { navigate } = useRouter();
   if (!currentUser) return null;
-  const items = {
-    STUDENT: [{ to: '/profile', label: 'My profile', icon: UserRound }, { to: '/adopt', label: 'My plant', icon: Sprout }, { to: '/leaderboard', label: 'Rewards & ranks', icon: Trophy }],
-    STAFF: [{ to: '/plant-reports', label: 'Plant care audits', icon: ClipboardCheck }, { to: '/admin-verify', label: 'Verification desk', icon: ShieldCheck }],
-    ADMIN: [{ to: '/admin-verify', label: 'Verification desk', icon: ShieldCheck }, { to: '/overseer', label: 'Overseer seat', icon: Eye }],
-  }[role] || [];
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }}>
       <button
         type="button"
         className="tb-btn"
-        onClick={() => setOpen(o => !o)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label="Account menu"
-        style={{ paddingLeft: 5, gap: 6 }}
+        onClick={() => navigate('/profile')}
+        aria-label={`Open ${currentUser.name}'s profile`}
+        title="Open profile"
+        style={{ paddingLeft: 5, gap: 7 }}
       >
         <span style={{
           width: 28, height: 28, borderRadius: 9, display: 'grid', placeItems: 'center', fontSize: 15,
           background: roleMeta?.tint,
         }}>{currentUser.avatar || '🌱'}</span>
-        <ChevronDown size={14} style={{ transition: 'transform var(--dur-2) var(--ease-out)', transform: open ? 'rotate(180deg)' : 'none' }} />
+        <span className="hide-md" style={{ fontSize: 11, fontWeight: 800 }}>Profile</span>
       </button>
-      {open && (
-        <div className="menu-pop" role="menu">
-          <div style={{ padding: '8px 10px 12px', borderBottom: '1px solid var(--border)', marginBottom: 6 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{currentUser.name}</div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: roleMeta?.accent, marginTop: 3, letterSpacing: '.04em', textTransform: 'uppercase' }}>{roleMeta?.title}</div>
-            <div style={{ fontSize: 11.5, color: 'var(--text-3)', fontWeight: 600, marginTop: 2 }}>
-              {isStudent ? `${currentUser.usn} · ${currentUser.branch} · Year ${currentUser.year}` : currentUser.designation}
-            </div>
-          </div>
-          {items.map(({ to, label, icon: Icon }, i) => (
-            <Link key={to} to={to} className="menu-item" role="menuitem" onClick={() => setOpen(false)}
-              style={{ animation: `revealRight .3s var(--ease-out) ${i * 0.04}s backwards` }}>
-              <Icon size={15} /> {label}
-            </Link>
-          ))}
-          <div style={{ height: 1, background: 'var(--border)', margin: '6px 0' }} />
-          <button type="button" className="menu-item danger" role="menuitem" onClick={logout}>
-            <LogOut size={15} /> Sign out
-          </button>
-        </div>
-      )}
     </div>
   );
 }

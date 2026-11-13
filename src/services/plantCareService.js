@@ -1,6 +1,7 @@
 // ─── Adopt-a-Plant + Anonymous Overseer ──────────────────────────────────────
 // Students adopt a campus plant and must water it every cycle:
-//   +10 for each on-time watering (+20 bonus every 5-streak)
+//   +10 base for on-time watering; thirsty/high-care plants earn +10 extra
+//   (+20 base streak bonus every 5 waterings, with another care-tier bonus)
 //   −15 for every cycle that passes without water (settled automatically)
 // One student at a time may hold the Overseer seat. The Overseer's identity is
 // never exposed: other users only ever see a pseudonym code. The Overseer walks
@@ -30,6 +31,19 @@ export const PLANT_RULES = {
   overseerReward: 20,
   auditPenalties: [25, 50, 100],
 };
+
+// Extra points scale with the species' real care demand. Thirsty plants need
+// frequent attention; moderate plants with a 48-hour schedule receive a smaller bonus.
+export function plantCareBonus(plant) {
+  const profile = profileFor(plant);
+  if (profile.tolerance === 'thirsty') {
+    return { tier: 'HIGH', watering: 10, adoption: 15, streak: 10, rescue: 5 };
+  }
+  if (profile.tolerance === 'moderate' && profile.baseIntervalHrs <= 48) {
+    return { tier: 'MODERATE', watering: 5, adoption: 10, streak: 5, rescue: 3 };
+  }
+  return { tier: 'STANDARD', watering: 0, adoption: 0, streak: 0, rescue: 0 };
+}
 
 // Where each plant physically is on campus [lng, lat]. Placed beside real campus
 // roads (checked against the Mapbox basemap), with a cluster on the open south
@@ -223,7 +237,8 @@ export const plantCareService = {
     if (state.plants.some(x => x.adopterId === user.id)) return { ok: false, message: 'You already care for a plant. One plant per Guardian keeps it fair.' };
     Object.assign(p, { adopterId: user.id, adopterName: user.name, adoptedAt: now(), lastWateredAt: now() - scheduleOf(p).intervalHrs * H * 0.6, streak: 0, penalisedMisses: 0, log: [], flaggedAt: null });
     commit();
-    return { ok: true, plant: { ...p }, points: PLANT_RULES.adoptBonus };
+    const careBonus = plantCareBonus(p);
+    return { ok: true, plant: { ...p }, points: PLANT_RULES.adoptBonus + careBonus.adoption, careBonus };
   },
 
   release(plantId, userId) {
@@ -249,10 +264,11 @@ export const plantCareService = {
     p.shieldSaved = false;
     p.log = [now(), ...(p.log || [])].slice(0, 12);
     if (photo) p.lastPhoto = photo;
-    const bonus = p.streak % PLANT_RULES.streakBonusEvery === 0 ? PLANT_RULES.streakBonus : 0;
+    const careBonus = plantCareBonus(p);
+    const bonus = p.streak % PLANT_RULES.streakBonusEvery === 0 ? PLANT_RULES.streakBonus + careBonus.streak : 0;
     if (rescue?.status === 'OPEN') guardianTaskService.cancelTask(rescue.id); // owner made it after all
     commit();
-    return { ok: true, plant: { ...p }, points: PLANT_RULES.wateringReward + bonus, bonus, late };
+    return { ok: true, plant: { ...p }, points: PLANT_RULES.wateringReward + careBonus.watering + bonus, bonus, careBonus, late };
   },
 
   /**
@@ -282,7 +298,7 @@ export const plantCareService = {
             eligibility: 'NON_PLANT_OWNER',
             location: p.location,
             severity: 'HIGH',
-            points: PLANT_RULES.rescueReward,
+            points: PLANT_RULES.rescueReward + plantCareBonus(p).rescue,
             co2Saved: `Keeps a ${p.name.toLowerCase()} alive`,
             detectedBy: `Care schedule: not watered for ${this.formatDuration(now() - p.lastWateredAt)}`,
             appliances: `${litres(sc.ml)} of water`,

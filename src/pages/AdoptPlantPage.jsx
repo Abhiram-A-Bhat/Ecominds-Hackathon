@@ -20,7 +20,7 @@ import { RadioIcon as Radio } from '@phosphor-icons/react/dist/csr/Radio';
 import { LightbulbIcon as Lightbulb } from '@phosphor-icons/react/dist/csr/Lightbulb';
 import { HouseIcon as Home } from '@phosphor-icons/react/dist/csr/House';
 import { useAuth } from '../contexts/AuthContext';
-import { plantCareService, careStatus, PLANT_RULES } from '../services/plantCareService';
+import { plantCareService, careStatus, PLANT_RULES, plantCareBonus } from '../services/plantCareService';
 import { fmtClock } from '../components/PlantReminder';
 import { litres, days, perDays, everyDays } from '../data/plantProfiles';
 import { guardianTaskService } from '../services/guardianTaskService';
@@ -105,6 +105,7 @@ function MoistureGauge({ value, color }) {
 function MyPlant({ plant, now, onWater, onRelease }) {
   const st = careStatus(plant, now);
   const lv = LEVEL[st.level];
+  const careBonus = plantCareBonus(plant);
   const fileRef = useRef(null);
   const [photo, setPhoto] = useState(null);
   const [drops, setDrops] = useState(0);
@@ -141,13 +142,16 @@ function MyPlant({ plant, now, onWater, onRelease }) {
             <span className="chip"><MapPin size={13} /> {plant.location}</span>
             <span className="chip" style={{ color: '#7dd3fc' }}><Droplets size={13} /> {litres(st.ml)} {every(st.intervalHrs)}</span>
             <span className="chip" style={{ color: '#fb923c' }}><Flame size={13} /> {plant.streak || 0} streak</span>
+            <span className="chip" style={{ color: careBonus.tier === 'HIGH' ? '#facc15' : careBonus.tier === 'MODERATE' ? '#86efac' : 'var(--text-3)' }}>
+              {careBonus.tier === 'HIGH' ? `High-care · +${careBonus.watering} per watering` : careBonus.tier === 'MODERATE' ? `Moderate-care · +${careBonus.watering} per watering` : 'Standard-care plant'}
+            </span>
             {(plant.shields > 0 || plant.shieldSaved) && <span className="chip" style={{ color: '#a78bfa', borderColor: 'rgba(167,139,250,.45)' }}>🛡️ {plant.shieldSaved ? 'Shield saved your streak' : 'Streak shield ready'}</span>}
           </div>
           <p style={{ fontSize: 14, color: 'var(--text-2)', margin: '14px 0 0', lineHeight: 1.6 }}>
             {st.level === 'overdue'
               ? <>Overdue by <strong style={{ color: '#f87171' }}>{fmt(-st.msToDue)}</strong>. Every further {perDays(st.intervalHrs)} without water costs <strong>−{PLANT_RULES.missPenalty}</strong>, and the watering has been offered to other Guardians.</>
               : st.canWater
-                ? <>Window is open. Water within <strong style={{ color: 'var(--text)' }}>{fmt(st.msToDue)}</strong> — give it <strong style={{ color: '#7dd3fc' }}>{litres(st.ml)}</strong> for <strong style={{ color: '#facc15' }}>+{PLANT_RULES.wateringReward}</strong>.</>
+                ? <>Window is open. Water within <strong style={{ color: 'var(--text)' }}>{fmt(st.msToDue)}</strong> — give it <strong style={{ color: '#7dd3fc' }}>{litres(st.ml)}</strong> for <strong style={{ color: '#facc15' }}>+{PLANT_RULES.wateringReward + careBonus.watering}</strong>.</>
                 : <>Watered {when(plant.lastWateredAt, now)}. Next window opens in <strong style={{ color: 'var(--text)' }}>{fmt(st.canWaterAt - now)}</strong>.</>}
           </p>
         </div>
@@ -184,7 +188,7 @@ function MyPlant({ plant, now, onWater, onRelease }) {
         <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={pick} />
         <button type="button" className="btn-eco" disabled={!st.canWater} onClick={water}
           style={{ padding: '13px 22px', fontSize: 14.5, opacity: st.canWater ? 1 : .5, cursor: st.canWater ? 'pointer' : 'not-allowed' }}>
-          <Droplets size={17} /> {st.canWater ? `Log ${litres(st.ml)} watering · +${PLANT_RULES.wateringReward}` : 'Watered — come back later'}
+          <Droplets size={17} /> {st.canWater ? `Log ${litres(st.ml)} watering · +${PLANT_RULES.wateringReward + careBonus.watering}` : 'Watered — come back later'}
         </button>
         <button type="button" className="btn-ghost" onClick={() => fileRef.current?.click()} style={{ padding: '12px 16px', fontSize: 13.5 }}>
           {photo ? <img src={photo} alt="Watering photo preview" style={{ width: 22, height: 22, borderRadius: 6, objectFit: 'cover' }} /> : <Camera size={15} />}
@@ -232,7 +236,7 @@ export function AdoptPlantPage() {
     const res = plantCareService.adopt(p.id, currentUser);
     if (!res.ok) { say(res.message); return; }
     adjustPoints(currentUser.id, res.points, `Adopted ${p.name} (${p.id})`, 'TREE');
-    triggerEcoCelebration({ title: `${p.name} is yours!`, message: `Give it ${litres(p.schedule.ml)} ${every(p.schedule.intervalHrs)}, ideally ${p.schedule.window === 'evening' ? '5–7 PM' : '6–9 AM'}. We'll remind you. On time: +${PLANT_RULES.wateringReward}. Missed: −${PLANT_RULES.missPenalty}.`, points: res.points, badge: `+${res.points} adoption bonus` });
+    triggerEcoCelebration({ title: `${p.name} is yours!`, message: `Give it ${litres(p.schedule.ml)} ${every(p.schedule.intervalHrs)}, ideally ${p.schedule.window === 'evening' ? '5–7 PM' : '6–9 AM'}. We'll remind you. On time: +${PLANT_RULES.wateringReward + res.careBonus.watering}. Missed: −${PLANT_RULES.missPenalty}.`, points: res.points, badge: `+${res.points} adoption bonus` });
   };
 
   const water = (photo) => {
@@ -261,8 +265,8 @@ export function AdoptPlantPage() {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {[
-            { t: `+${PLANT_RULES.wateringReward} per on-time watering`, c: '#34d399', I: TrendingUp },
-            { t: `+${PLANT_RULES.streakBonus} every ${PLANT_RULES.streakBonusEvery}-streak`, c: '#facc15', I: Flame },
+            { t: `+${PLANT_RULES.wateringReward} base; up to +${PLANT_RULES.wateringReward + 10} for high-care plants`, c: '#34d399', I: TrendingUp },
+            { t: `+${PLANT_RULES.streakBonus} every ${PLANT_RULES.streakBonusEvery} waterings; high-care +${PLANT_RULES.streakBonus + 10} total`, c: '#facc15', I: Flame },
             { t: `−${PLANT_RULES.missPenalty} per missed cycle`, c: '#f87171', I: TrendingDown },
           ].map(({ t, c, I }) => <span key={t} className="chip" style={{ color: c, borderColor: `${c}44`, background: `${c}10` }}><I size={13} /> {t}</span>)}
         </div>
@@ -275,7 +279,7 @@ export function AdoptPlantPage() {
           <HeartHandshake size={34} color="#86efac" style={{ flexShrink: 0, animation: 'float 4s ease-in-out infinite' }} />
           <div>
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>You haven't adopted a plant yet</h2>
-            <p style={{ margin: '4px 0 0', color: 'var(--text-2)', fontSize: 13.5 }}>Choose one below. You get +{PLANT_RULES.adoptBonus} to start, and it's yours to keep alive.</p>
+            <p style={{ margin: '4px 0 0', color: 'var(--text-2)', fontSize: 13.5 }}>Choose one below. Adoption gives +{PLANT_RULES.adoptBonus} base points, with +15 for high-care plants and +10 for moderate-care plants.</p>
           </div>
         </section>
       )}
@@ -333,6 +337,7 @@ export function AdoptPlantPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 14 }}>
           {open.map((p, i) => {
             const st = careStatus(p, now);
+            const careBonus = plantCareBonus(p);
             return (
               <article key={p.id} className="glass spotlight" style={{ borderRadius: 20, padding: 18, display: 'flex', flexDirection: 'column', gap: 10, animation: `staggerIn .45s var(--ease-out) ${i * 0.05}s backwards` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -348,7 +353,7 @@ export function AdoptPlantPage() {
                 </div>
                 <button type="button" className="btn-eco" disabled={!!mine} onClick={() => adopt(p)}
                   style={{ marginTop: 'auto', padding: '10px 14px', fontSize: 13, opacity: mine ? .45 : 1, cursor: mine ? 'not-allowed' : 'pointer' }}>
-                  <Sprout size={15} /> {mine ? 'One plant per Guardian' : `Adopt · +${PLANT_RULES.adoptBonus}`}
+                  <Sprout size={15} /> {mine ? 'One plant per Guardian' : `Adopt · +${PLANT_RULES.adoptBonus + careBonus.adoption}${careBonus.tier === 'HIGH' ? ' · High-care bonus' : careBonus.tier === 'MODERATE' ? ' · Care bonus' : ''}`}
                 </button>
               </article>
             );

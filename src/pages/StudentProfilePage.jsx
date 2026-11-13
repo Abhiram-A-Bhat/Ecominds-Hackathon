@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from '../router/Router';
+import { getEcoLevel } from '../utils/ecoLevels';
 
 const TYPE_META = {
   SCAN:       { icon: '📷', label: 'AI Scanner',     color: '#34d399' },
@@ -14,8 +15,6 @@ const TYPE_META = {
   HANDMEDOWN: { icon: '🤝', label: 'Hand-Me-Down',    color: '#38bdf8' },
   OTHER:      { icon: '⭐', label: 'Other',             color: '#e2e8f0' },
 };
-
-const LEVEL_NAMES = ['', 'Eco Seed 🌱', 'Green Sprout 🌿', 'Forest Guardian 🌲', 'Bio-Sphere Architect 🌍', 'Planetary Hero 🏆'];
 
 export function StudentProfilePage() {
   const { currentUser, isAdmin, logout } = useAuth();
@@ -64,6 +63,7 @@ export function StudentProfilePage() {
             <Link to="/admin" className="btn-ghost px-4 py-2 text-xs rounded-xl no-underline font-bold">
               📊 IoT Console
             </Link>
+            <button onClick={logout} className="text-xs font-bold text-red-300 border border-red-500/30 bg-red-900/20 hover:bg-red-900/40 px-4 py-2 rounded-xl transition">Sign Out</button>
           </div>
         </div>
       </div>
@@ -74,7 +74,7 @@ export function StudentProfilePage() {
   const pending  = currentUser.history?.filter(h => h.status === 'PENDING')  || [];
   const rejected = currentUser.history?.filter(h => h.status === 'REJECTED') || [];
 
-  const xpPercent = Math.min(100, ((currentUser.xp || 0) % 500) / 5);
+  const ecoLevel = getEcoLevel(currentUser.lifetimePoints ?? currentUser.credits ?? 0);
 
   return (
     <div className="space-y-6">
@@ -140,23 +140,23 @@ export function StudentProfilePage() {
             <div className="text-[10px] text-slate-500 font-bold">Total XP</div>
           </div>
           <div>
-            <div className="text-2xl font-black text-purple-400 font-mono">Lv.{currentUser.level ?? 1}</div>
+            <div className="text-2xl font-black text-purple-400 font-mono">Lv.{ecoLevel.level}</div>
             <div className="text-[10px] text-slate-500 font-bold">Level</div>
           </div>
         </div>
       </div>
 
-      {/* XP progress bar */}
+      {/* EcoCredit level progress */}
       {!isAdmin && (
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-2">
           <div className="flex justify-between text-xs font-bold">
-            <span className="text-white">{LEVEL_NAMES[currentUser.level ?? 1]}</span>
-            <span className="text-slate-400">{currentUser.xp ?? 0} XP · Next level at {((currentUser.level ?? 1)) * 500} XP</span>
+            <span className="text-white">{ecoLevel.title}</span>
+            <span className="text-slate-400">{ecoLevel.next == null ? `${ecoLevel.points.toLocaleString()} lifetime points · Max level` : `${ecoLevel.points.toLocaleString()} / ${ecoLevel.next.toLocaleString()} lifetime points`}</span>
           </div>
           <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
-              style={{ width: `${xpPercent}%`, transition: 'width 1s ease' }}
+              style={{ width: `${ecoLevel.progress}%`, transition: 'width 1s ease' }}
             />
           </div>
         </div>

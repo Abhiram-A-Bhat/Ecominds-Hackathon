@@ -121,7 +121,6 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
   const { path } = useRouter();
   const { currentUser, role, roleMeta, isStudent } = useAuth();
   const pulseTo = { STUDENT: '/bins', STAFF: '/cleaner-ops', ADMIN: '/admin' }[role];
-  const meTo = { STUDENT: '/profile', STAFF: '/plant-reports', ADMIN: '/admin-verify' }[role];
 
   const healthy = bins.filter(b => b.fillLevel < 80).length;
   const health = bins.length ? healthy / bins.length : 1;
@@ -180,11 +179,7 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
 
       {/* User + collapse */}
       <div style={{ borderTop: '1px solid var(--border)', padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexDirection: collapsed ? 'column' : 'row' }}>
-        <Link
-          to={meTo}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, textDecoration: 'none' }}
-          title={currentUser?.name}
-        >
+        <div role="group" aria-label="Signed-in account" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }} title={currentUser?.name}>
           <span style={{
             width: 36, height: 36, borderRadius: 12, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 18,
             background: roleMeta?.tint,
@@ -198,7 +193,7 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
               {roleMeta?.title}{isStudent && currentUser?.usn ? ` · ${currentUser.usn}` : ''}
             </span>
           </span>
-        </Link>
+        </div>
         <button
           type="button"
           onClick={onToggle}

@@ -3,6 +3,7 @@ import { triggerConfetti } from '../utils/confetti';
 import { triggerEcoCelebration } from '../utils/ecoCelebration';
 import { IconAward, IconZap, IconCheckCircle } from './Icons';
 import { useAuth } from '../contexts/AuthContext';
+import { getEcoLevel } from '../utils/ecoLevels';
 
 const WHEEL_PRIZES = [
   { label: '+5 Credits', type: 'credits', value: 5, color: '#059669' },
@@ -20,9 +21,9 @@ export function GamificationDrawer({
   onClose,
   userCredits,
   setUserCredits,
+  lifetimePoints = userCredits,
   streakDays = 5,
   userXp = 1840,
-  userLevel = 4,
   onAddXp
 }) {
   const { addContribution, currentUser } = useAuth();
@@ -102,7 +103,7 @@ export function GamificationDrawer({
     { id: 'b3', name: 'Zero-Plate Hero', desc: 'Prevented cafeteria food discard', icon: '🍱', unlocked: true },
     { id: 'b4', name: 'IoT Node Sentinel', desc: 'Reported an ultrasonic surge bin', icon: '📡', unlocked: true },
     { id: 'b5', name: 'Pass-The-Torch Patron', desc: 'Passed textbook or lab kit to junior', icon: '📚', unlocked: false },
-    { id: 'b6', name: 'Mission LiFE Grandmaster', desc: 'Reached Level 5 with 2500+ XP', icon: '👑', unlocked: false }
+    { id: 'b6', name: 'Mission LiFE Grandmaster', desc: 'Reached Level 5 with 2500 lifetime EcoCredits', icon: '👑', unlocked: false }
   ]);
 
   const handleCompleteQuest = (qId) => {
@@ -128,7 +129,7 @@ export function GamificationDrawer({
     triggerConfetti();
     triggerEcoCelebration({
       title: `Mission Accomplished: ${targetQuest.title}!`,
-      message: `Great job! You claimed +${targetQuest.credits} EcoCredits and +${targetQuest.xp} XP towards Level ${userLevel + 1}.`,
+      message: `Great job! You earned +${targetQuest.credits} EcoCredits and +${targetQuest.xp} bonus XP. Levels are based on lifetime EcoCredits.`,
       points: targetQuest.credits,
       badge: `+${targetQuest.credits} EcoCredits`,
     });
@@ -182,8 +183,7 @@ export function GamificationDrawer({
   if (!isOpen) return null;
 
   const completedCount = quests.filter(q => q.completed).length;
-  const xpNeeded = 2500;
-  const xpProgress = Math.min(100, Math.round((userXp / xpNeeded) * 100));
+  const ecoLevel = getEcoLevel(lifetimePoints);
 
   return (
     <div
@@ -222,7 +222,7 @@ export function GamificationDrawer({
               </span>
             </div>
             <div style={{ fontSize: 11, color: '#7ea893', marginTop: 3 }}>
-              Level {userLevel} Campus Eco-Guardian • {userXp.toLocaleString()} / {xpNeeded} XP
+              Level {ecoLevel.level} · {ecoLevel.title} • {lifetimePoints.toLocaleString()} lifetime EcoCredits • {userXp.toLocaleString()} bonus XP
             </div>
           </div>
 
@@ -239,15 +239,15 @@ export function GamificationDrawer({
           </button>
         </div>
 
-        {/* Level XP Progress Strip */}
+        {/* Lifetime EcoCredits determine levels and never fall when rewards are redeemed. */}
         <div style={{ padding: '12px 24px', background: 'rgba(3,13,8,0.5)', borderBottom: '1px solid rgba(52,211,153,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>
-            <span style={{ color: '#7ea893' }}>Level {userLevel} Progression</span>
-            <span style={{ color: '#34d399', fontFamily: 'monospace' }}>{xpProgress}% to Level 5 (Bio-Architect)</span>
+            <span style={{ color: '#7ea893' }}>Level {ecoLevel.level} · {ecoLevel.title}</span>
+            <span style={{ color: '#34d399', fontFamily: 'monospace' }}>{ecoLevel.next == null ? 'Max level reached' : `${lifetimePoints.toLocaleString()} / ${ecoLevel.next.toLocaleString()} pts to Level ${ecoLevel.level + 1}`}</span>
           </div>
           <div style={{ width: '100%', height: 7, borderRadius: 99, background: 'rgba(52,211,153,0.1)', overflow: 'hidden' }}>
             <div style={{
-              width: `${xpProgress}%`, height: '100%',
+              width: `${ecoLevel.progress}%`, height: '100%',
               background: '#059669',
               borderRadius: 99, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)'
             }} />
@@ -358,8 +358,23 @@ export function GamificationDrawer({
                   🎡 Daily RNSIT Eco-Wheel of Fortune
                 </h3>
                 <p style={{ fontSize: 11, color: '#7ea893', margin: '4px 0 0' }}>
-                  Spin once per 24 hours to win EcoCredits, canteen perks, and tree naming tokens!
+                  One spin per day. Every wheel segment awards EcoCredits; prize odds are shown below.
                 </p>
+              </div>
+
+              <div aria-label="Eco-Wheel prize odds" style={{ width: '100%', maxWidth: 430, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 7 }}>
+                {[
+                  { label: '+5 EcoCredits', odds: '12.5%', color: '#059669' },
+                  { label: '+10 EcoCredits', odds: '37.5%', color: '#10b981' },
+                  { label: '+15 EcoCredits', odds: '25%', color: '#34d399' },
+                  { label: '+20 EcoCredits', odds: '12.5%', color: '#14b8a6' },
+                  { label: '+30 EcoCredits', odds: '12.5%', color: '#f59e0b' },
+                ].map(prize => (
+                  <div key={prize.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '7px 9px', border: `1px solid ${prize.color}55`, borderRadius: 9, background: `${prize.color}16`, fontSize: 10.5 }}>
+                    <span style={{ color: '#e2f5ec', fontWeight: 800 }}>{prize.label}</span>
+                    <span style={{ color: prize.color, fontWeight: 900 }}>{prize.odds}</span>
+                  </div>
+                ))}
               </div>
 
               {/* Wheel Container with Pointer */}

@@ -23,6 +23,7 @@ const LIVE_KEY = 'ecosphere_live_users_v2';
 
 const cloneUser = (u) => ({
   ...u,
+  lifetimePoints: Number(u.lifetimePoints ?? u.credits ?? 0),
   history: [...(u.history || [])],
   pendingContributions: [...(u.pendingContributions || [])],
   rewards: [...(u.rewards || [])],
@@ -35,7 +36,11 @@ function hydrate() {
     const stored = JSON.parse(localStorage.getItem(LIVE_KEY));
     if (Array.isArray(stored)) {
       const byId = new Map(stored.map(u => [u.id, u]));
-      const merged = seeds.map(s => byId.has(s.id) ? { ...s, ...byId.get(s.id) } : s);
+      const merged = seeds.map(s => {
+        const saved = byId.get(s.id);
+        if (!saved) return s;
+        return { ...s, ...saved, lifetimePoints: Number(saved.lifetimePoints ?? saved.credits ?? s.credits ?? 0) };
+      });
       stored.forEach(u => { if (!merged.some(m => m.id === u.id)) merged.push(u); });
       return merged;
     }
@@ -151,7 +156,11 @@ export function AuthProvider({ children }) {
   // ── Points ───────────────────────────────────────────────────────────────
   const updateCredits = useCallback((delta) => {
     if (!userId) return;
-    updateUser(userId, u => ({ ...u, credits: Math.max(0, (u.credits || 0) + delta) }));
+    updateUser(userId, u => ({
+      ...u,
+      credits: Math.max(0, (u.credits || 0) + delta),
+      lifetimePoints: (u.lifetimePoints ?? u.credits ?? 0) + Math.max(0, Number(delta) || 0),
+    }));
   }, [userId]);
 
   /** Credit or debit any user, with a history line. Used by plant care, audits, guardian tasks. */
@@ -159,6 +168,7 @@ export function AuthProvider({ children }) {
     updateUser(targetId, u => ({
       ...u,
       credits: Math.max(0, (u.credits || 0) + delta),
+      lifetimePoints: (u.lifetimePoints ?? u.credits ?? 0) + Math.max(0, Number(delta) || 0),
       xp: delta > 0 ? (u.xp || 0) + delta * 4 : u.xp,
       history: [{ id: `adj-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, action, points: delta, date: today(), status: 'APPROVED', type }, ...(u.history || [])],
     }));
@@ -189,6 +199,7 @@ export function AuthProvider({ children }) {
       history: u.history.map(h => (h.id === contributionId ? { ...h, status: 'APPROVED', points: award } : h)),
       pendingContributions: u.pendingContributions.filter(h => h.id !== contributionId),
       credits: (u.credits || 0) + award,
+      lifetimePoints: (u.lifetimePoints ?? u.credits ?? 0) + award,
       });
     });
     return approved;
@@ -250,6 +261,7 @@ export function AuthProvider({ children }) {
         ...u,
         handMeDowns: { ...u.handMeDowns, donated: u.handMeDowns.donated.map(d => (d.id === donationId && d.status === 'PENDING_ADMIN' ? { ...d, status: 'AVAILABLE', pointsAwarded: Math.min(30, Math.max(0, Math.round(Number(pointsToAward) || 0))) } : d)) },
         credits: owns ? (u.credits || 0) + Math.min(30, Math.max(0, Math.round(Number(pointsToAward) || 0))) : u.credits,
+        lifetimePoints: owns ? (u.lifetimePoints ?? u.credits ?? 0) + Math.min(30, Math.max(0, Math.round(Number(pointsToAward) || 0))) : u.lifetimePoints,
         history: owns ? [{ id: `don-${donationId}`, action: `Passed Down: ${donation.title}`, points: Math.min(30, Math.max(0, Math.round(Number(pointsToAward) || 0))), date: today(), status: 'APPROVED', type: 'HANDMEDOWN' }, ...(u.history || [])] : u.history,
       };
     }));

@@ -44,7 +44,7 @@ export const ROUTES = {
   },
   '/bins': {
     title: 'Smart Bins Map', short: 'Bins',
-    desc: { STUDENT: 'Find the nearest bin and report overflow', STAFF: 'Live fill levels — empty what is critical', ADMIN: 'Sensor network health and fill history' },
+    desc: { STUDENT: 'Find nearby bins and check live fill levels', STAFF: 'Live fill levels — empty what is critical', ADMIN: 'Sensor network health and fill history' },
     icon: Trash2, accent: '#a3e635', roles: ALL,
   },
   '/trees': {
@@ -52,10 +52,10 @@ export const ROUTES = {
     icon: TreePine, accent: '#4ade80', roles: ALL,
   },
 
-  // ── Student only ───────────────────────────────────────────────────────
+  // ── Shared account profile ─────────────────────────────────────────────
   '/profile': {
     title: 'My Profile', short: 'Profile', desc: 'Badges, contributions and history',
-    icon: UserRound, accent: '#6ee7b7', roles: [STUDENT],
+    icon: UserRound, accent: '#6ee7b7', roles: ALL,
   },
   '/adopt': {
     title: 'Adopt-a-Plant', short: 'My Plants', desc: 'Water your plant on time: +10 per watering, −15 per miss',
@@ -145,7 +145,7 @@ export const ROUTES = {
 // Sidebar groups — ordered by how often each role reaches for them.
 export const NAV_GROUPS = {
   STUDENT: [
-    { label: 'Overview', items: ['/', '/profile'] },
+    { label: 'Overview', items: ['/'] },
     { label: 'Guardian Duty', items: ['/adopt', '/bounties', '/bins'] },
     { label: 'Circular Living', items: ['/exchange', '/mess', '/trees'] },
     { label: 'Rewards & Roles', items: ['/leaderboard', '/overseer', '/feedback'] },

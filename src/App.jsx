@@ -167,7 +167,6 @@ function AppContent() {
   const [isActionMeshOpen, setIsActionMeshOpen] = useState(false);
   const [isGuardianDrawerOpen, setIsGuardianDrawerOpen] = useState(false);
   const [userXp, setUserXp] = useState(currentUser?.xp ?? 0);
-  const [userLevel, setUserLevel] = useState(currentUser?.level ?? 1);
 
   // Derive credits from current user (falls back gracefully for admin)
   const userCredits = currentUser?.credits ?? 0;
@@ -301,51 +300,6 @@ function AppContent() {
     }
   };
 
-  const handleReportBinOverflow = (binId) => {
-    if (bins.find(b => b.id === binId)?.fillLevel >= 90) return;
-    handleUpdateBinFill(binId, 96);
-    const targetBin = bins.find(b => b.id === binId) || { name: `Bin ${binId}`, block: 'Campus Grounds' };
-    
-    // Award student points and record in account history
-    setUserCredits(prev => prev + 15);
-    if (addContribution) {
-      addContribution({
-        action: `Reported Bin Overflow: ${targetBin.name}`,
-        points: 15,
-        type: 'BOUNTY',
-        status: 'APPROVED',
-      });
-    }
-
-    triggerEcoCelebration({
-      title: '🚨 Bin Overflow Reported!',
-      message: `Maintenance alert dispatched for ${targetBin.name}. You earned +15 EcoCredits!`,
-      points: 15,
-      badge: '+15 EcoCredits',
-    });
-
-    actionMesh.createTicket({
-      title: `${targetBin.name} (${binId}) Ultrasonic Surge (96%)`,
-      category: 'IOT_SURGE',
-      severity: 'CRITICAL',
-      location: `${targetBin.block} (12.9018° N, 77.5184° E)`,
-      detectedBy: 'Crowdsourced Student Sensor Report',
-      assignedTo: {
-        name: 'Ramesh K.',
-        role: 'Ground Ops Specialist (Zone 2)',
-        id: 'RNS-GS-04',
-        type: 'STAFF'
-      },
-      automatedResolution: `ACO routing engine reprioritized collection sequence.`,
-      impactMetric: 'Prevents corridor littering & cross-stream contamination',
-      targetEntityId: binId,
-      interDependentLinks: [
-        { label: 'Ground Ops Route', path: '/cleaner-ops', badge: 'ACO Priority' },
-        { label: 'Student Overflow Bounty', path: '/bounties', badge: '+40 PTS' }
-      ]
-    });
-  };
-
   // Show login page without shell
   if (!currentUser || path === '/login') {
     return <LoginPage />;
@@ -356,8 +310,8 @@ function AppContent() {
     '/':             () => <HomePage bins={bins} userCredits={userCredits} salvagedItems={salvagedItems} trees={trees} surplusAlerts={surplusAlerts} onOpenGuardians={openGuardians} onOpenSearch={() => setIsSearchOpen(true)} />,
     '/cctv-sentinel':() => <CctvSentinelPage />,
     '/rnsit-matrix': () => <RnsitIdeasPage userCredits={userCredits} setUserCredits={setUserCredits} onOpenActionMesh={() => setIsActionMeshOpen(true)} />,
-    '/scanner':      () => <AiScannerPage userCredits={userCredits} setUserCredits={setUserCredits} bins={bins} onReportBinOverflow={handleReportBinOverflow} />,
-    '/bins':         () => <CampusBinsPage bins={bins} onEmptyBin={handleEmptyBin} onReportBinOverflow={handleReportBinOverflow} />,
+    '/scanner':      () => <AiScannerPage userCredits={userCredits} setUserCredits={setUserCredits} />,
+    '/bins':         () => <CampusBinsPage bins={bins} onEmptyBin={handleEmptyBin} />,
     '/ewaste':       () => <EwastePage salvagedItems={salvagedItems} setSalvagedItems={setSalvagedItems} userCredits={userCredits} setUserCredits={setUserCredits} />,
     '/traceability': () => <TraceabilityLedgerPage />,
     '/exchange':     () => <ExchangePage userCredits={userCredits} setUserCredits={setUserCredits} />,
@@ -473,14 +427,11 @@ function AppContent() {
         onClose={() => setIsGamificationOpen(false)}
         userCredits={userCredits}
         setUserCredits={setUserCredits}
+        lifetimePoints={currentUser?.lifetimePoints ?? userCredits}
         userXp={userXp}
-        userLevel={userLevel}
         onAddXp={(amount) => {
           setUserXp(prev => {
             const next = prev + amount;
-            if (next >= 2500 && userLevel < 5) {
-              setUserLevel(5);
-            }
             return next;
           });
         }}

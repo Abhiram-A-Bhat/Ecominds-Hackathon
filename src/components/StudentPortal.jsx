@@ -6,7 +6,6 @@ import {
   IconUtensils, 
   IconLeaf, 
   IconAward, 
-  IconAlertTriangle,
   IconCheckCircle,
   IconMapPin,
   IconZap,
@@ -26,8 +25,6 @@ export const StudentPortal = ({
   setTrees,
   surplusAlerts,
   setSurplusAlerts,
-  bins,
-  onReportBinOverflow
 }) => {
   const [activeTab, setActiveTab] = useState('ai-scanner');
   
@@ -316,37 +313,6 @@ export const StudentPortal = ({
               </div>
             )}
 
-            {/* Quick Report Bin Overflow */}
-            <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <IconAlertTriangle className="w-4 h-4 text-amber-400" />
-                  Report An Overflowing Bin
-                </span>
-                <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded font-semibold">+20 PTS Bounty</span>
-              </div>
-              <div className="flex gap-2">
-                <select 
-                  id="overflowBinSelect"
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200"
-                >
-                  {bins.map(b => (
-                    <option key={b.id} value={b.id}>{b.id} - {b.name} ({b.fillLevel}% full)</option>
-                  ))}
-                </select>
-                <button
-                  onClick={() => {
-                    const sel = document.getElementById('overflowBinSelect').value;
-                    onReportBinOverflow(sel);
-                    setUserCredits(prev => prev + 20);
-                    triggerConfetti();
-                  }}
-                  className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition"
-                >
-                  Alert Staff
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

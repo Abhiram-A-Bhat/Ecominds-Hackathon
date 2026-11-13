@@ -14,7 +14,7 @@ import { triggerEcoCelebration } from '../utils/ecoCelebration';
 import { Link } from '../router/Router';
 import { useAuth } from '../contexts/AuthContext';
 
-export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOverflow }) => {
+export const AiScannerPage = () => {
   const { isOperator: isAdmin, getLiveUsers, allotVerifiedPoints } = useAuth();
   const allStudents = (getLiveUsers ? getLiveUsers() : []).filter(u => u.role === 'STUDENT');
   const [selectedStudentUsn, setSelectedStudentUsn] = useState(allStudents[0]?.usn || '1RN23IS005');
