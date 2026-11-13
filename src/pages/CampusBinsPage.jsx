@@ -135,7 +135,7 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
             <div className="bin-live-meter" role="progressbar" aria-label="Live dustbin fill level" aria-valuemin="0" aria-valuemax="100" aria-valuenow={hasLiveReading ? liveFillPercent : undefined}>
               <div style={{ width: `${liveFillPercent ?? 0}%`, background: liveFillColor }} />
             </div>
-            <div className="bin-live-caption">{hasLiveReading ? `${liveFillPercent}% full · ${Math.round(sensorReading.spaceLeftPercent ?? (100 - reportedFill))}% capacity left${Number.isFinite(Number(sensorReading.freeSpaceCm)) ? ` · ${sensorReading.freeSpaceCm} cm usable space` : ''}` : 'No live reading yet'}</div>
+            <div className="bin-live-caption">{hasLiveReading ? `${liveFillPercent}% full · ${Math.round(sensorReading.spaceLeftPercent ?? (100 - reportedFill))}% capacity left` : 'No live reading yet'}</div>
           </div>
         </section>
       ) : (
