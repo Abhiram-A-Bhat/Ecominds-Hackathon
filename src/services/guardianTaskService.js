@@ -166,9 +166,12 @@ export const guardianTaskService = {
     return { success: true, task };
   },
 
-  completeTask(taskId, notes = 'Physically verified and resolved on-site.', proofPhoto = null) {
+  completeTask(taskId, guardianId, notes = 'Physically verified and resolved on-site.', proofPhoto = null) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return { success: false, message: 'Task not found.' };
+    if (task.status !== 'CLAIMED' || task.claimedBy?.id !== guardianId) {
+      return { success: false, message: 'Only the guardian who claimed this task can complete it, and completed tasks cannot be claimed again.' };
+    }
     task.status = 'COMPLETED';
     task.completedAt = timeNow();
     task.completionNotes = notes;

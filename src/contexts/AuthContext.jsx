@@ -8,6 +8,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { MOCK_USERS, findUserByCredentials } from '../data/users';
+import { REWARDS_CATALOG } from '../data/mockData';
 
 export const ROLE_META = {
   STUDENT: { title: 'Green Guardian', short: 'Guardian', accent: '#34d399', tint: 'rgba(52,211,153,.14)', border: 'rgba(52,211,153,.3)' },
@@ -177,12 +178,20 @@ export function AuthProvider({ children }) {
   const getAllUsers = useCallback(() => [...liveUsers], []);
 
   const approveContribution = useCallback((studentId, contributionId, points) => {
-    updateUser(studentId, u => ({
+    let approved = false;
+    updateUser(studentId, u => {
+      const contribution = u.history.find(h => h.id === contributionId && h.status === 'PENDING');
+      if (!contribution) return u;
+      const award = Math.min(100, Math.max(0, Math.round(Number(points) || 0)));
+      approved = true;
+      return ({
       ...u,
-      history: u.history.map(h => (h.id === contributionId ? { ...h, status: 'APPROVED', points } : h)),
+      history: u.history.map(h => (h.id === contributionId ? { ...h, status: 'APPROVED', points: award } : h)),
       pendingContributions: u.pendingContributions.filter(h => h.id !== contributionId),
-      credits: u.credits + points,
-    }));
+      credits: (u.credits || 0) + award,
+      });
+    });
+    return approved;
   }, []);
 
   const rejectContribution = useCallback((studentId, contributionId, reason) => {
@@ -217,32 +226,43 @@ export function AuthProvider({ children }) {
   }, [userId]);
 
   const redeemReward = useCallback((reward, code) => {
-    if (!userId) return;
+    if (!userId) return false;
+    const catalogReward = REWARDS_CATALOG.find(item => item.id === reward?.id);
+    if (!catalogReward || catalogReward.cost !== reward.cost) return false;
+    let redeemed = false;
     updateUser(userId, u => ({
-      ...u,
-      credits: Math.max(0, (u.credits || 0) - reward.cost),
-      rewards: [{ id: `rwd-${Date.now()}`, name: reward.title, icon: reward.icon || '🎁', value: `${reward.cost} PTS`, code, redeemedAt: today() }, ...(u.rewards || [])],
-      history: [{ id: `hist-rwd-${Date.now()}`, action: `Redeemed Reward: ${reward.title}`, points: -reward.cost, date: today(), status: 'APPROVED', type: 'OTHER' }, ...(u.history || [])],
+      ...((u.credits || 0) < catalogReward.cost ? {} : (redeemed = true, {
+        credits: (u.credits || 0) - catalogReward.cost,
+        rewards: [{ id: `rwd-${Date.now()}`, name: catalogReward.title, icon: catalogReward.icon || '🎁', value: `${catalogReward.cost} PTS`, code, redeemedAt: today() }, ...(u.rewards || [])],
+        history: [{ id: `hist-rwd-${Date.now()}`, action: `Redeemed Reward: ${catalogReward.title}`, points: -catalogReward.cost, date: today(), status: 'APPROVED', type: 'OTHER' }, ...(u.history || [])],
+      })),
     }));
+    return redeemed;
   }, [userId]);
 
   const approveDonation = useCallback((donationId, pointsToAward) => {
+    let approved = false;
     commit(liveUsers.map(u => {
-      const owns = u.handMeDowns.donated.some(d => d.id === donationId);
+      const donation = u.handMeDowns.donated.find(d => d.id === donationId && d.status === 'PENDING_ADMIN');
+      const owns = Boolean(donation);
+      if (owns) approved = true;
       return {
         ...u,
-        handMeDowns: { ...u.handMeDowns, donated: u.handMeDowns.donated.map(d => (d.id === donationId ? { ...d, status: 'AVAILABLE' } : d)) },
-        credits: owns ? u.credits + pointsToAward : u.credits,
+        handMeDowns: { ...u.handMeDowns, donated: u.handMeDowns.donated.map(d => (d.id === donationId && d.status === 'PENDING_ADMIN' ? { ...d, status: 'AVAILABLE', pointsAwarded: Math.min(30, Math.max(0, Math.round(Number(pointsToAward) || 0))) } : d)) },
+        credits: owns ? (u.credits || 0) + Math.min(30, Math.max(0, Math.round(Number(pointsToAward) || 0))) : u.credits,
+        history: owns ? [{ id: `don-${donationId}`, action: `Passed Down: ${donation.title}`, points: Math.min(30, Math.max(0, Math.round(Number(pointsToAward) || 0))), date: today(), status: 'APPROVED', type: 'HANDMEDOWN' }, ...(u.history || [])] : u.history,
       };
     }));
+    return approved;
   }, []);
 
   const allotVerifiedPoints = useCallback((studentUsn, points, actionTitle) => {
     const clean = (studentUsn || '').trim().toUpperCase();
     const target = liveUsers.find(u => u.usn && u.usn.toUpperCase() === clean);
-    if (!target) return null;
-    adjustPoints(target.id, points, actionTitle || 'AI Waste Verification — ECE Lab 104', 'SCAN');
-    return liveUsers.find(u => u.id === target.id);
+    if (!target) return false;
+    const award = Math.min(50, Math.max(0, Math.round(Number(points) || 0)));
+    adjustPoints(target.id, award, actionTitle || 'AI Waste Verification — ECE Lab 104', 'SCAN');
+    return true;
   }, [adjustPoints]);
 
   const role = currentUser?.role || null;

@@ -113,6 +113,8 @@ class ActionMeshStore {
   }
 
   resolveTicket(ticketId, resolutionNote = "Autonomous execution completed successfully.") {
+    const existing = this.tickets.find(t => t.id === ticketId);
+    if (!existing || existing.status === 'RESOLVED') return false;
     this.tickets = this.tickets.map(t => {
       if (t.id === ticketId) {
         return {
@@ -125,6 +127,7 @@ class ActionMeshStore {
       return t;
     });
     this.notify();
+    return true;
   }
 
   reassignTicket(ticketId, newAssignee) {

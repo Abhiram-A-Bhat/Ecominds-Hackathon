@@ -118,12 +118,12 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
     };
     setHandoverRecord(record);
     setMvpStep(5);
-    setUserCredits(prev => prev + 75);
+    setUserCredits(prev => prev + 40);
     triggerEcoCelebration({
       title: '🔬 E-Waste Handover Verified!',
       message: `KSPCB Manifest ${manifestId} generated. ${triageAnswers.finalDisposition} pathway locked — zero toxic landfill!`,
-      points: 75,
-      badge: '+75 EcoCredits',
+      points: 40,
+      badge: '+40 EcoCredits',
       variant: 'SUPER_STAR'
     });
   };

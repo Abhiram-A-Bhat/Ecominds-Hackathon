@@ -113,14 +113,14 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems }) => {
     const rates = valuationData?.rates || {};
     const value = (metals.copper_kg || 0) * rates.copper_per_kg + (metals.gold_g || 0) * rates.gold_traces_per_gram + (metals.cobalt_kg || 0) * rates.cobalt_per_kg + (metals.lithium_kg || 0) * rates.lithium_carbonate_per_kg + (metals.aluminium_kg || 0) * rates.aluminium_per_kg;
     const hazardous = `${deposit.name} ${deposit.analysis?.hazards?.join(' ')}`.toLowerCase().match(/battery|lithium|crt|mercury/);
-    return Math.min(200, Math.round(base + (deposit.analysis?.salvageability_score || 0) * 5 + value / 20 + (hazardous ? 20 : 0)));
+    return Math.min(75, Math.round(base + (deposit.analysis?.salvageability_score || 0) * 3 + value / 100 + (hazardous ? 10 : 0)));
   };
 
   const approveDeposit = (deposit, requestedPoints) => {
     let latestDeposits = pendingDeposits;
     try { latestDeposits = JSON.parse(localStorage.getItem(DEPOSIT_KEY) || '[]'); } catch { /* use current view state */ }
     if (latestDeposits.find(row => row.id === deposit.id)?.status !== 'PENDING') return;
-    const points = Math.min(200, Math.max(0, Math.round(Number(requestedPoints ?? suggestedPoints(deposit)))));
+    const points = Math.min(75, Math.max(0, Math.round(Number(requestedPoints ?? suggestedPoints(deposit)))));
     adjustPoints?.(deposit.studentId, points, `E-waste: ${deposit.name}`, 'EWASTE');
     const updated = latestDeposits.map(row => row.id === deposit.id ? { ...row, status: 'APPROVED', approvedPoints: points, approvedAt: new Date().toISOString() } : row);
     localStorage.setItem(DEPOSIT_KEY, JSON.stringify(updated));
@@ -507,7 +507,7 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems }) => {
           const value = (metals.copper_kg || 0) * rates.copper_per_kg + (metals.gold_g || 0) * rates.gold_traces_per_gram + (metals.cobalt_kg || 0) * rates.cobalt_per_kg + (metals.lithium_kg || 0) * rates.lithium_carbonate_per_kg + (metals.aluminium_kg || 0) * rates.aluminium_per_kg;
           return <div key={deposit.id} className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs text-slate-300"><strong className="text-white">{deposit.name}</strong> · {student?.name || 'Student'} · {deposit.weightKg} kg · {deposit.condition}<div className="mt-1 text-slate-400">Score {deposit.analysis?.salvageability_score}/10 · Estimated recovered value ₹{value.toFixed(2)} · {deposit.status}</div></div>
-            {deposit.status === 'PENDING' && <div className="flex items-center gap-2"><label className="text-[10px] text-slate-400">Points<input aria-label={`Approved points for ${deposit.name}`} type="number" min="0" max="200" value={points} onChange={e => setPointOverrides(prev => ({ ...prev, [deposit.id]: e.target.value }))} className="ml-2 w-20 rounded-md border border-slate-700 bg-slate-900 p-2 text-white" /></label><button onClick={() => approveDeposit(deposit, points)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Approve &amp; credit</button></div>}
+            {deposit.status === 'PENDING' && <div className="flex items-center gap-2"><label className="text-[10px] text-slate-400">Points<input aria-label={`Approved points for ${deposit.name}`} type="number" min="0" max="75" value={points} onChange={e => setPointOverrides(prev => ({ ...prev, [deposit.id]: e.target.value }))} className="ml-2 w-20 rounded-md border border-slate-700 bg-slate-900 p-2 text-white" /></label><button onClick={() => approveDeposit(deposit, points)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Approve &amp; credit</button></div>}
             {deposit.status === 'APPROVED' && <span className="text-xs font-bold text-emerald-300">+{deposit.approvedPoints} credits approved</span>}
           </div>;
         })}

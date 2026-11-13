@@ -149,7 +149,7 @@ export function GreenGuardianDrawer({ isOpen, onClose }) {
   };
 
   const complete = (task, photo) => {
-    const res = guardianTaskService.completeTask(task.id, 'Resolved on site by hand.', photo);
+    const res = guardianTaskService.completeTask(task.id, currentUser?.id, 'Resolved on site by hand.', photo);
     if (!res.success) { say(res.message); return; }
     if (task.category === 'FLORA_CARE' && task.ownerId) plantCareService.rescueWater(task.targetId, currentUser.name);
     adjustPoints(currentUser.id, res.points, `Green Guardian task done: ${task.title}`, 'BOUNTY');

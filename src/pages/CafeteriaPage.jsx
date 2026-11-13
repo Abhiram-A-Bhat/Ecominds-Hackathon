@@ -6,23 +6,31 @@ import { actionMesh } from '../services/actionMeshService';
 import { useAuth } from '../contexts/AuthContext';
 
 export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, setUserCredits }) => {
-  const { addContribution } = useAuth();
-  const [claimedItems, setClaimedItems] = useState(new Set());
+  const { addContribution, currentUser } = useAuth();
+  const claimKey = `ecominds_cafeteria_claims_${currentUser?.id || 'guest'}_${new Date().toLocaleDateString('en-CA')}`;
+  const [claimedItems, setClaimedItems] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(claimKey) || '[]')); } catch { return new Set(); }
+  });
   const [claimToast, setClaimToast] = useState('');
 
   const handleClaimSurplus = (alertId) => {
     const targetAlert = surplusAlerts.find(a => a.id === alertId);
+    let storedClaims = [];
+    try { storedClaims = JSON.parse(localStorage.getItem(claimKey) || '[]'); } catch { /* use in-memory state */ }
+    if (!targetAlert || targetAlert.status !== 'ACTIVE' || claimedItems.has(alertId) || storedClaims.includes(alertId)) return;
     setSurplusAlerts(prev => prev.map(a => a.id === alertId ? { ...a, claimedPct: 100, status: "COMPLETED" } : a));
-    setClaimedItems(prev => new Set([...prev, alertId]));
+    const nextClaims = [...new Set([...storedClaims, alertId])];
+    localStorage.setItem(claimKey, JSON.stringify(nextClaims));
+    setClaimedItems(new Set(nextClaims));
     setClaimToast('✅ Food claimed! Please collect within 10 minutes from the location.');
     setTimeout(() => setClaimToast(''), 4000);
     // Auto-resolve corresponding Action Mesh ticket
     actionMesh.resolveTicket("ACT-103", "Canteen surplus claimed & distributed to students.");
-    setUserCredits(prev => prev + 25);
+    setUserCredits(prev => prev + 10);
     if (addContribution) {
       addContribution({
         action: `Reserved Surplus Meal: ${targetAlert?.event || 'Cafeteria Event'}`,
-        points: 25,
+        points: 10,
         type: 'FOOD',
         status: 'APPROVED',
       });
@@ -30,17 +38,23 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
     triggerEcoCelebration({
       title: '🍱 Surplus Meal Reserved!',
       message: 'Canteen surplus claimed & redistributed. Zero food waste logged. Show confirmation at mess counter.',
-      points: 25,
-      badge: '+25 EcoCredits'
+      points: 10,
+      badge: '+10 EcoCredits'
     });
   };
 
   const handleCleanPlate = () => {
-    setUserCredits(prev => prev + 20);
+    let storedClaims = [];
+    try { storedClaims = JSON.parse(localStorage.getItem(claimKey) || '[]'); } catch { /* use in-memory state */ }
+    if (claimedItems.has('clean-plate') || storedClaims.includes('clean-plate')) return;
+    const nextClaims = [...new Set([...storedClaims, 'clean-plate'])];
+    localStorage.setItem(claimKey, JSON.stringify(nextClaims));
+    setClaimedItems(new Set(nextClaims));
+    setUserCredits(prev => prev + 10);
     if (addContribution) {
       addContribution({
         action: 'Clean Plate Finish — Zero Food Waste',
-        points: 20,
+        points: 10,
         type: 'FOOD',
         status: 'APPROVED',
       });
@@ -48,8 +62,8 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
     triggerEcoCelebration({
       title: '🌿 Zero Plate Waste!',
       message: 'Empty plate logged — ~350g of food diverted from landfill. You are a campus sustainability hero!',
-      points: 20,
-      badge: '+20 EcoCredits'
+      points: 10,
+      badge: '+10 EcoCredits'
     });
   };
 
@@ -73,11 +87,12 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
 
         <button
           onClick={handleCleanPlate}
-          aria-label="Log a clean empty plate and earn 20 EcoCredits"
+          aria-label="Log a clean empty plate and earn 10 EcoCredits"
+          disabled={claimedItems.has('clean-plate')}
           className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center gap-2"
         >
           <IconCheckCircle className="w-4 h-4" aria-hidden="true" />
-          Log Empty Plate (+20 PTS)
+          {claimedItems.has('clean-plate') ? 'Plate Logged Today' : 'Log Empty Plate (+10 PTS)'}
         </button>
       </div>
 
@@ -124,10 +139,10 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
                 {alert.status === 'ACTIVE' && !claimedItems.has(alert.id) && alert.claimedPct < 100 ? (
                   <button
                     onClick={() => handleClaimSurplus(alert.id)}
-                    aria-label={`Reserve free surplus meal from ${alert.event} and earn 25 EcoCredits`}
+                    aria-label={`Reserve free surplus meal from ${alert.event} and earn 10 EcoCredits`}
                     className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-md shadow-amber-600/30"
                   >
-                    🍱 Reserve Free Meal (+25 PTS)
+                    🍱 Reserve Free Meal (+10 PTS)
                   </button>
                 ) : claimedItems.has(alert.id) ? (
                   <span className="text-xs text-emerald-400 font-bold">✓ Claimed</span>

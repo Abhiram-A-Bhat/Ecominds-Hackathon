@@ -5,14 +5,14 @@ import { IconAward, IconZap, IconCheckCircle } from './Icons';
 import { useAuth } from '../contexts/AuthContext';
 
 const WHEEL_PRIZES = [
-  { label: '+50 Credits', type: 'credits', value: 50, color: '#059669' },
-  { label: '☕ Free Coffee', type: 'perk', value: 'Canteen Coffee Voucher', color: '#047857' },
-  { label: '+25 Credits', type: 'credits', value: 25, color: '#10b981' },
-  { label: '🌱 Rare Seed Pack', type: 'perk', value: 'Botanical Seed Kit', color: '#065f46' },
-  { label: '+100 JACKPOT', type: 'credits', value: 100, color: '#f59e0b' },
-  { label: '+30 Credits', type: 'credits', value: 30, color: '#34d399' },
-  { label: '⚡ 2x XP Boost', type: 'perk', value: '24h XP Multiplier', color: '#0d9488' },
-  { label: '+40 Credits', type: 'credits', value: 40, color: '#14b8a6' },
+  { label: '+5 Credits', type: 'credits', value: 5, color: '#059669' },
+  { label: '+10 Credits', type: 'credits', value: 10, color: '#047857' },
+  { label: '+10 Credits', type: 'credits', value: 10, color: '#10b981' },
+  { label: '+10 Credits', type: 'credits', value: 10, color: '#065f46' },
+  { label: '+30 JACKPOT', type: 'credits', value: 30, color: '#f59e0b' },
+  { label: '+15 Credits', type: 'credits', value: 15, color: '#34d399' },
+  { label: '+15 Credits', type: 'credits', value: 15, color: '#0d9488' },
+  { label: '+20 Credits', type: 'credits', value: 20, color: '#14b8a6' },
 ];
 
 export function GamificationDrawer({
@@ -25,12 +25,17 @@ export function GamificationDrawer({
   userLevel = 4,
   onAddXp
 }) {
-  const { addContribution } = useAuth();
+  const { addContribution, currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('quests'); // 'quests' | 'wheel' | 'badges'
   const [spinning, setSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [wonPrize, setWonPrize] = useState(null);
-  const [hasSpunToday, setHasSpunToday] = useState(false);
+  const claimKey = `ecominds_daily_rewards_${currentUser?.id || 'guest'}_${new Date().toLocaleDateString('en-CA')}`;
+  const [dailyClaims, setDailyClaims] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(claimKey) || '{"quests":[],"spun":false}'); }
+    catch { return { quests: [], spun: false }; }
+  });
+  const hasSpunToday = dailyClaims.spun;
 
   // Close on Escape key
   useEffect(() => {
@@ -47,8 +52,8 @@ export function GamificationDrawer({
       title: 'Pass Down Academic Gear',
       desc: 'List notes, uniforms, or a calculator on Pass-The-Torch for juniors.',
       xp: 60,
-      credits: 35,
-      completed: true,
+      credits: 10,
+      completed: false,
       icon: '🤝'
     },
     {
@@ -56,7 +61,7 @@ export function GamificationDrawer({
       title: 'Water an Adopted Campus Tree',
       desc: 'Log a hydration cycle for Gulmohar or Neem flora on Campus Trees.',
       xp: 45,
-      credits: 25,
+      credits: 12,
       completed: false,
       icon: '🌿'
     },
@@ -65,8 +70,8 @@ export function GamificationDrawer({
       title: 'Clean Plate Dining Pledge',
       desc: 'Commit to zero cafeteria food waste during today\'s lunch service.',
       xp: 35,
-      credits: 20,
-      completed: true,
+      credits: 10,
+      completed: false,
       icon: '🍽️'
     },
     {
@@ -74,11 +79,22 @@ export function GamificationDrawer({
       title: 'Spot & Report a Resource Leak',
       desc: 'Report an unattended classroom projector or dripping tap in Bounties.',
       xp: 40,
-      credits: 30,
+      credits: 15,
       completed: false,
       icon: '⚡'
     }
   ]);
+
+  useEffect(() => {
+    setDailyClaims(() => {
+      try { return JSON.parse(localStorage.getItem(claimKey) || '{"quests":[],"spun":false}'); }
+      catch { return { quests: [], spun: false }; }
+    });
+  }, [claimKey]);
+
+  useEffect(() => {
+    setQuests(prev => prev.map(q => ({ ...q, completed: dailyClaims.quests?.includes(q.id) || false })));
+  }, [dailyClaims.quests]);
 
   const [badges, setBadges] = useState([
     { id: 'b1', name: 'Silicon Recycler', desc: 'Disposed 5+ verified e-waste units', icon: '🏆', unlocked: true },
@@ -91,35 +107,38 @@ export function GamificationDrawer({
 
   const handleCompleteQuest = (qId) => {
     const targetQuest = quests.find(q => q.id === qId);
-    if (!targetQuest || targetQuest.completed) return;
+    let storedClaims = dailyClaims;
+    try { storedClaims = JSON.parse(localStorage.getItem(claimKey) || '{"quests":[],"spun":false}'); } catch { /* use in-memory state */ }
+    if (!targetQuest || targetQuest.completed || storedClaims.quests?.includes(qId)) return;
+    const nextClaims = { ...storedClaims, quests: [...new Set([...(storedClaims.quests || []), qId])] };
+    localStorage.setItem(claimKey, JSON.stringify(nextClaims));
+    setDailyClaims(nextClaims);
 
-    setQuests(prev => prev.map(q => {
-      if (q.id === qId && !q.completed) {
-        setUserCredits(c => c + q.credits);
-        if (onAddXp) onAddXp(q.xp);
-        if (addContribution) {
-          addContribution({
-            action: `Daily Mission: ${q.title}`,
-            points: q.credits,
-            type: 'OTHER',
-            status: 'APPROVED',
-          });
-        }
-        triggerConfetti();
-        triggerEcoCelebration({
-          title: `Mission Accomplished: ${q.title}!`,
-          message: `Great job! You claimed +${q.credits} EcoCredits and +${q.xp} XP towards Level ${userLevel + 1}.`,
-          points: q.credits,
-          badge: `+${q.credits} EcoCredits`,
-        });
-        return { ...q, completed: true };
-      }
-      return q;
-    }));
+    setQuests(prev => prev.map(q => q.id === qId ? { ...q, completed: true } : q));
+    setUserCredits(c => c + targetQuest.credits);
+    if (onAddXp) onAddXp(targetQuest.xp);
+    if (addContribution) {
+      addContribution({
+        action: `Daily Mission: ${targetQuest.title}`,
+        points: targetQuest.credits,
+        type: 'OTHER',
+        status: 'APPROVED',
+      });
+    }
+    triggerConfetti();
+    triggerEcoCelebration({
+      title: `Mission Accomplished: ${targetQuest.title}!`,
+      message: `Great job! You claimed +${targetQuest.credits} EcoCredits and +${targetQuest.xp} XP towards Level ${userLevel + 1}.`,
+      points: targetQuest.credits,
+      badge: `+${targetQuest.credits} EcoCredits`,
+    });
   };
 
   const handleSpinWheel = () => {
     if (spinning || hasSpunToday) return;
+    const nextClaims = { ...dailyClaims, spun: true };
+    localStorage.setItem(claimKey, JSON.stringify(nextClaims));
+    setDailyClaims(nextClaims);
     setSpinning(true);
     setWonPrize(null);
 
@@ -133,7 +152,6 @@ export function GamificationDrawer({
 
     setTimeout(() => {
       setSpinning(false);
-      setHasSpunToday(true);
       const prize = WHEEL_PRIZES[prizeIndex];
       setWonPrize(prize);
       triggerConfetti();

@@ -10,26 +10,26 @@ import { IconRecycle, IconCheckCircle, IconZap, IconAward } from '../components/
 
 const ITEM_CATEGORIES = [
   { value: 'ALL', label: 'All Items', icon: '🎒' },
-  { value: 'UNIFORM', label: 'College Uniform & Blazers', icon: '👔', points: 65 },
-  { value: 'NOTES', label: 'Lecture Notes', icon: '📓', points: 35 },
-  { value: 'TEXTBOOK', label: 'Textbooks', icon: '📚', points: 50 },
-  { value: 'CALCULATOR', label: 'Calculators', icon: '🔢', points: 60 },
-  { value: 'ELECTRONICS', label: 'Electronic Kits', icon: '🔌', points: 70 },
-  { value: 'LAB_GEAR', label: 'Lab Tools & Apparatus', icon: '🔬', points: 65 },
-  { value: 'DRAWING', label: 'Mini Drafters & Boards', icon: '📐', points: 55 },
-  { value: 'CLOTHING', label: 'Lab Coats & Aprons', icon: '🥼', points: 40 },
+  { value: 'UNIFORM', label: 'College Uniform & Blazers', icon: '👔', points: 25 },
+  { value: 'NOTES', label: 'Lecture Notes', icon: '📓', points: 10 },
+  { value: 'TEXTBOOK', label: 'Textbooks', icon: '📚', points: 20 },
+  { value: 'CALCULATOR', label: 'Calculators', icon: '🔢', points: 25 },
+  { value: 'ELECTRONICS', label: 'Electronic Kits', icon: '🔌', points: 30 },
+  { value: 'LAB_GEAR', label: 'Lab Tools & Apparatus', icon: '🔬', points: 25 },
+  { value: 'DRAWING', label: 'Mini Drafters & Boards', icon: '📐', points: 20 },
+  { value: 'CLOTHING', label: 'Lab Coats & Aprons', icon: '🥼', points: 15 },
 ];
 
 const POINTS_BY_CATEGORY = {
-  UNIFORM: 65,
-  NOTES: 35,
-  TEXTBOOK: 50,
-  CALCULATOR: 60,
-  ELECTRONICS: 70,
-  LAB_GEAR: 65,
-  DRAWING: 55,
-  CLOTHING: 40,
-  OTHER: 30,
+  UNIFORM: 25,
+  NOTES: 10,
+  TEXTBOOK: 20,
+  CALCULATOR: 25,
+  ELECTRONICS: 30,
+  LAB_GEAR: 25,
+  DRAWING: 20,
+  CLOTHING: 15,
+  OTHER: 10,
 };
 
 // In-memory persistent list of shared senior hand-me-downs & exchange items
@@ -165,8 +165,12 @@ const BRANCH_FILTERS = [
 ];
 
 export function ExchangePage({ userCredits, setUserCredits }) {
-  const { currentUser, isAdmin, isStudent, addContribution, addDonation, addClaimedItem, approveContribution, getLiveUsers } = useAuth();
+  const { currentUser, isAdmin, addContribution, addDonation, addClaimedItem, approveDonation } = useAuth();
   const [items, setItems] = useState(globalDonations);
+  const receivedKey = `ecominds_exchange_claims_${currentUser?.id || 'guest'}`;
+  const [claimedIds, setClaimedIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(receivedKey) || '[]')); } catch { return new Set(); }
+  });
   const [activeTab, setActiveTab] = useState(isAdmin ? 'admin' : 'browse');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedBranch, setSelectedBranch] = useState('ALL');
@@ -201,8 +205,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
     return matchesCat && matchesBranch && matchesQuery;
   });
 
-  const availableItems = filteredItems.filter(i => i.status === 'AVAILABLE');
-  const pendingItems = items.filter(i => i.status === 'PENDING_ADMIN');
+  const availableItems = filteredItems.filter(i => i.status === 'AVAILABLE' && !claimedIds.has(i.id));
   const myDonations = items.filter(i => i.donorId === currentUser?.id || i.donorUSN === currentUser?.usn);
 
   // Senior submits item to pass down
@@ -221,7 +224,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
       donorUSN: currentUser?.usn || '1RN-SENIOR',
       donorId: currentUser?.id,
       targetBranch: form.targetBranch,
-      status: 'AVAILABLE', // Instantly available on circular board
+      status: 'PENDING_ADMIN',
       listedAt: 'Just now',
       pointsAwarded: pts,
       claimedBy: null,
@@ -230,11 +233,6 @@ export function ExchangePage({ userCredits, setUserCredits }) {
     globalDonations = [newItem, ...globalDonations];
     setItems([newItem, ...items]);
 
-    // Update user credits
-    if (setUserCredits) {
-      setUserCredits(prev => prev + pts);
-    }
-
     if (addDonation) {
       addDonation({
         id: newItem.id,
@@ -242,25 +240,16 @@ export function ExchangePage({ userCredits, setUserCredits }) {
         category: newItem.category,
         condition: newItem.condition,
         date: new Date().toLocaleDateString('en-IN'),
-        status: 'AVAILABLE',
+        status: 'PENDING_ADMIN',
         points: pts,
-      });
-    }
-
-    if (addContribution) {
-      addContribution({
-        action: `Passed Down: ${form.title}`,
-        points: pts,
-        type: 'HANDMEDOWN',
-        status: 'APPROVED',
       });
     }
 
     triggerEcoCelebration({
       title: '🤝 Item Passed Down!',
-      message: `"${form.title}" is now available for junior students. You earned +${pts} EcoCredits!`,
-      points: pts,
-      badge: `+${pts} EcoCredits`,
+      message: `"${form.title}" was submitted for staff review. EcoCredits are awarded after the item is verified.`,
+      points: 0,
+      badge: 'Pending staff review',
     });
 
     setForm({ title: '', category: 'TEXTBOOK', condition: 'Good Condition', description: '', targetBranch: 'All Branches' });
@@ -268,8 +257,20 @@ export function ExchangePage({ userCredits, setUserCredits }) {
     setActiveTab('browse');
   };
 
+  const handleApproveDonation = (item) => {
+    if (!approveDonation?.(item.id, item.pointsAwarded)) return;
+    const updated = items.map(row => row.id === item.id ? { ...row, status: 'AVAILABLE' } : row);
+    globalDonations = updated;
+    setItems(updated);
+  };
+
   // Junior claims an item
   const handleClaim = (item) => {
+    const liveItem = items.find(i => i.id === item.id);
+    if (!liveItem || liveItem.status !== 'AVAILABLE' || liveItem.donorId === currentUser?.id || claimedIds.has(item.id)) return;
+    const nextClaimed = [...new Set([...claimedIds, item.id])];
+    localStorage.setItem(receivedKey, JSON.stringify(nextClaimed));
+    setClaimedIds(new Set(nextClaimed));
     const updated = items.map(i => {
       if (i.id === item.id) {
         return {
@@ -409,7 +410,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
               </p>
             </div>
             <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-lg">
-              Earn +{POINTS_BY_CATEGORY[form.category] || 35} EcoCredits
+              Earn up to +{POINTS_BY_CATEGORY[form.category] || 10} EcoCredits after staff verifies the item
             </span>
           </div>
 
@@ -489,7 +490,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
               type="submit"
               className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2 rounded-xl transition"
             >
-              Confirm & List Item (+{POINTS_BY_CATEGORY[form.category] || 35} PTS)
+                Submit for Review
             </button>
           </div>
         </form>
@@ -711,8 +712,8 @@ export function ExchangePage({ userCredits, setUserCredits }) {
                   <div>
                     <h4 className="text-xs font-bold text-white">{d.title}</h4>
                     <p className="text-[11px] text-slate-400 mt-0.5">{d.condition}</p>
-                    <span className="text-[10px] text-emerald-400 font-bold mt-1 inline-block">
-                      +{d.pointsAwarded || 35} EcoCredits Awarded
+                    <span className="text-[10px] text-amber-300 font-bold mt-1 inline-block">
+                      Up to +{d.pointsAwarded || 10} EcoCredits after staff approval
                     </span>
                   </div>
                   <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
@@ -720,7 +721,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
                       ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                       : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                   }`}>
-                    {d.status === 'CLAIMED' ? 'Claimed by Junior' : 'Active on Board'}
+                    {d.status === 'CLAIMED' ? 'Claimed by Junior' : d.status === 'PENDING_ADMIN' ? 'Awaiting staff review' : 'Active on Board'}
                   </span>
                 </div>
               ))}
@@ -752,9 +753,8 @@ export function ExchangePage({ userCredits, setUserCredits }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded">
-                    +{item.pointsAwarded || 35} pts
-                  </span>
+                  {item.status === 'PENDING_ADMIN' && <button type="button" onClick={() => handleApproveDonation(item)} className="rounded bg-emerald-700 px-2 py-1 text-[10px] font-bold text-white">Verify &amp; award {item.pointsAwarded} pts</button>}
+                  {item.status !== 'PENDING_ADMIN' && <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded">+{item.pointsAwarded || 10} pts</span>}
                   <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
                     {item.status}
                   </span>

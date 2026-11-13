@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export const BountiesPage = ({ userCredits, setUserCredits }) => {
   const { currentUser, addContribution } = useAuth();
+  const resolvedKey = `ecominds_resolved_bounties_${currentUser?.id || 'guest'}`;
   const [bounties, setBounties] = useState([
     {
       id: "BNT-101",
@@ -55,6 +56,10 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
 
   const handleClaimAndSolve = (bountyId, pts) => {
     const targetBounty = bounties.find(b => b.id === bountyId);
+    let resolvedIds = [];
+    try { resolvedIds = JSON.parse(localStorage.getItem(resolvedKey) || '[]'); } catch { /* ignore malformed cache */ }
+    if (!targetBounty || targetBounty.status !== 'DISPATCHED' || targetBounty.reporterId === currentUser?.id || resolvedIds.includes(bountyId)) return;
+    localStorage.setItem(resolvedKey, JSON.stringify([...resolvedIds, bountyId]));
     setBounties(prev => prev.map(b => {
       if (b.id === bountyId) {
         return {
@@ -65,20 +70,21 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
       }
       return b;
     }));
-    setUserCredits(c => c + pts);
+    const verifiedPoints = Math.min(35, Math.max(0, Number(pts) || 0));
+    setUserCredits(c => c + verifiedPoints);
     if (addContribution) {
       addContribution({
         action: `Resolved Bounty: ${targetBounty?.title || bountyId}`,
-        points: pts,
+        points: verifiedPoints,
         type: 'BOUNTY',
         status: 'APPROVED',
       });
     }
     triggerEcoCelebration({
       title: '🏆 Bounty Resolved!',
-      message: `Campus waste issue physically fixed on-site. +${pts} EcoCredits for direct impact action!`,
-      points: pts,
-      badge: `+${pts} EcoCredits`
+      message: `Campus waste issue physically fixed on-site. +${verifiedPoints} EcoCredits for direct impact action!`,
+      points: verifiedPoints,
+      badge: `+${verifiedPoints} EcoCredits`
     });
   };
 
@@ -91,29 +97,21 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
       title: newBounty.title,
       location: newBounty.location || "Campus Grounds",
       reporter: currentUser?.name || "Current Student (Eco-Watchdog)",
+      reporterId: currentUser?.id,
       reportedAt: "Just now",
       energySavedEst: "Calculating impact...",
-      bountyPts: 30,
+      bountyPts: 25,
       status: "DISPATCHED",
       actionTaken: "Facility maintenance automated ticket generated.",
       ...(photoPreview ? { photo: photoPreview } : {}),
     };
 
     setBounties([bnt, ...bounties]);
-    setUserCredits(prev => prev + 30);
-    if (addContribution) {
-      addContribution({
-        action: `Reported Resource Leak: ${newBounty.title}`,
-        points: 30,
-        type: 'BOUNTY',
-        status: 'APPROVED',
-      });
-    }
     triggerEcoCelebration({
       title: '🚨 Bounty Report Filed!',
       message: "Campus resource waste alert dispatched to facilities team. You are guarding RNSIT's eco-future!",
-      points: 30,
-      badge: '+30 EcoCredits'
+      points: 0,
+      badge: 'Points after verified fix'
     });
     setNewBounty({ title: '', location: '', type: 'Electricity / Phantom Load' });
     setPhotoPreview(null);
@@ -145,7 +143,7 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
           className="bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-amber-600/30 transition flex items-center gap-2"
         >
           <IconAlertTriangle className="w-4 h-4" aria-hidden="true" />
-          {isFormOpen ? '✕ Close Form' : '+ Report Waste (+30 PTS)'}
+          {isFormOpen ? '✕ Close Form' : '+ Report Waste'}
         </button>
       </div>
 
@@ -159,7 +157,7 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-sm font-bold text-white">Log Unattended Power or Water Waste</h3>
-            <span className="text-xs text-amber-400 font-bold">Earn +30 EcoCredits upon submission</span>
+            <span className="text-xs text-amber-400 font-bold">Earn 25 EcoCredits only after a dispatched issue is fixed</span>
           </div>
 
           {/* Quick Preset Chips */}
@@ -215,10 +213,10 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
             </div>
             <button
               type="submit"
-              aria-label="Submit bounty report and earn 30 EcoCredits"
+              aria-label="Submit resource waste report"
               className="bg-amber-600 hover:bg-amber-500 text-white font-black text-xs py-2 rounded-xl transition shadow-lg shadow-amber-600/30 self-end"
             >
-              🚨 Submit Report (+30 PTS)
+              🚨 Submit Report
             </button>
           </div>
 
@@ -289,7 +287,7 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
                 </div>
               </div>
 
-              {bnt.status === 'DISPATCHED' && (
+              {bnt.status === 'DISPATCHED' && bnt.reporterId !== currentUser?.id && (
                 <button
                   onClick={() => handleClaimAndSolve(bnt.id, bnt.bountyPts)}
                   aria-label={`Resolve bounty ${bnt.id} and claim ${bnt.bountyPts} EcoCredits`}

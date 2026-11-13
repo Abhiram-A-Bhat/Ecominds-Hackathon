@@ -297,37 +297,37 @@ export const REWARD_CATEGORIES = ['Everyday perks', 'Academic perks', 'Recogniti
 
 export const REWARDS_CATALOG = [
   // ── Everyday campus perks
-  { id: "R-8", title: "Free tea or coffee", cost: 40, category: "Everyday perks", icon: "☕", desc: "One hot drink at the central canteen.", where: "Canteen counter" },
-  { id: "R-6", title: "20 free print pages", cost: 60, category: "Everyday perks", icon: "🖨️", desc: "Black & white printing in the library or any department lab.", where: "Library / lab print desk" },
-  { id: "R-7", title: "50 photocopies of notes", cost: 80, category: "Everyday perks", icon: "🗒️", desc: "At the campus Xerox shop.", where: "Campus Xerox shop" },
-  { id: "R-9", title: "Skip-the-queue canteen pass", cost: 120, category: "Everyday perks", icon: "⏩", desc: "Use the express counter for 7 days.", where: "Canteen express counter" },
-  { id: "R-1", title: "Canteen meal ₹50 voucher", cost: 150, category: "Everyday perks", icon: "🍱", desc: "Any meal or snack up to ₹50.", where: "Canteen counter" },
-  { id: "R-4", title: "High-speed Wi-Fi boost (30 days)", cost: 250, category: "Everyday perks", icon: "⚡", desc: "Higher bandwidth on campus Wi-Fi for a month.", where: "Activated on your campus login" },
+  { id: "R-8", title: "Free tea or coffee", cost: 120, category: "Everyday perks", icon: "☕", desc: "One hot drink at the central canteen.", where: "Canteen counter" },
+  { id: "R-6", title: "20 free print pages", cost: 160, category: "Everyday perks", icon: "🖨️", desc: "Black & white printing in the library or any department lab.", where: "Library / lab print desk" },
+  { id: "R-7", title: "50 photocopies of notes", cost: 180, category: "Everyday perks", icon: "🗒️", desc: "At the campus Xerox shop.", where: "Campus Xerox shop" },
+  { id: "R-9", title: "Skip-the-queue canteen pass", cost: 250, category: "Everyday perks", icon: "⏩", desc: "Use the express counter for 7 days.", where: "Canteen express counter" },
+  { id: "R-1", title: "Canteen meal ₹50 voucher", cost: 500, category: "Everyday perks", icon: "🍱", desc: "Any meal or snack up to ₹50.", where: "Canteen counter" },
+  { id: "R-4", title: "High-speed Wi-Fi boost (30 days)", cost: 1000, category: "Everyday perks", icon: "⚡", desc: "Higher bandwidth on campus Wi-Fi for a month.", where: "Activated on your campus login" },
 
   // ── Academic perks
-  { id: "R-12", title: "Library loan extension (+7 days)", cost: 70, category: "Academic perks", icon: "📖", desc: "Keep one borrowed book a week longer.", where: "Central library desk" },
-  { id: "R-2", title: "Library overdue fine waiver (1 book)", cost: 100, category: "Academic perks", icon: "📚", desc: "Clears the fine on one late book.", where: "Central library desk" },
-  { id: "R-21", title: "Pass-The-Torch early access (2 days)", cost: 150, category: "Academic perks", icon: "🎒", desc: "See newly donated senior gear 2 days before everyone else.", where: "Pass-The-Torch page" },
-  { id: "R-11", title: "Priority lab or seminar-room booking", cost: 180, category: "Academic perks", icon: "🔬", desc: "First pick of lab slots or a seminar room for one week.", where: "Department office" },
-  { id: "R-10", title: "Assignment deadline extension (2 days)", cost: 300, category: "Academic perks", icon: "📝", desc: "One assignment, subject to your faculty member's approval.", where: "Show code to your faculty" },
+  { id: "R-12", title: "Library loan extension (+7 days)", cost: 250, category: "Academic perks", icon: "📖", desc: "Keep one borrowed book a week longer.", where: "Central library desk" },
+  { id: "R-2", title: "Library overdue fine waiver (1 book)", cost: 350, category: "Academic perks", icon: "📚", desc: "Clears the fine on one late book.", where: "Central library desk" },
+  { id: "R-21", title: "Pass-The-Torch early access (2 days)", cost: 300, category: "Academic perks", icon: "🎒", desc: "See newly donated senior gear 2 days before everyone else.", where: "Pass-The-Torch page" },
+  { id: "R-11", title: "Priority lab or seminar-room booking", cost: 400, category: "Academic perks", icon: "🔬", desc: "First pick of lab slots or a seminar room for one week.", where: "Department office" },
+  { id: "R-10", title: "Assignment deadline extension (2 days)", cost: 700, category: "Academic perks", icon: "📝", desc: "One assignment, subject to your faculty member's approval.", where: "Show code to your faculty" },
 
   // ── Recognition
-  { id: "R-13", title: "Green Guardian digital badge", cost: 200, category: "Recognition", icon: "🏅", desc: "A badge shown next to your name on your profile.", where: "Added to your profile" },
-  { id: "R-14", title: "Guardian of the Month nomination", cost: 350, category: "Recognition", icon: "📌", desc: "Your nomination goes to staff; the month's pick goes up on the notice board.", where: "Reviewed by staff" },
-  { id: "R-3", title: "Eco-Ambassador certificate (signed by Principal)", cost: 400, category: "Recognition", icon: "🎖️", desc: "Official certificate for your file.", where: "Principal's office" },
-  { id: "R-15", title: "Green-volunteering letter for résumé", cost: 450, category: "Recognition", icon: "📄", desc: "Signed letter of your hours and impact; may count toward VTU activity points.", where: "Department office" },
+  { id: "R-13", title: "Green Guardian digital badge", cost: 500, category: "Recognition", icon: "🏅", desc: "A badge shown next to your name on your profile.", where: "Added to your profile" },
+  { id: "R-14", title: "Guardian of the Month nomination", cost: 750, category: "Recognition", icon: "📌", desc: "Your nomination goes to staff; the month's pick goes up on the notice board.", where: "Reviewed by staff" },
+  { id: "R-3", title: "Eco-Ambassador certificate (signed by Principal)", cost: 1000, category: "Recognition", icon: "🎖️", desc: "Official certificate for your file.", where: "Principal's office" },
+  { id: "R-15", title: "Green-volunteering letter for résumé", cost: 1200, category: "Recognition", icon: "📄", desc: "Signed letter of your hours and impact; may count toward VTU activity points.", where: "Department office" },
 
   // ── Bigger rewards
-  { id: "R-18", title: "Partner shop discount card (10%, 1 month)", cost: 300, category: "Bigger rewards", icon: "🏷️", desc: "10% off at partner shops near campus.", where: "Partner shops" },
-  { id: "R-17", title: "College fest entry at 50% off", cost: 400, category: "Bigger rewards", icon: "🎪", desc: "Half-price entry to one fest event.", where: "Fest registration desk" },
-  { id: "R-16", title: "Free seat at a paid workshop or hackathon", cost: 800, category: "Bigger rewards", icon: "🎟️", desc: "Covers the registration fee for one campus workshop or hackathon.", where: "Event coordinator" },
+  { id: "R-18", title: "Partner shop discount card (10%, 1 month)", cost: 600, category: "Bigger rewards", icon: "🏷️", desc: "10% off at partner shops near campus.", where: "Partner shops" },
+  { id: "R-17", title: "College fest entry at 50% off", cost: 750, category: "Bigger rewards", icon: "🎪", desc: "Half-price entry to one fest event.", where: "Fest registration desk" },
+  { id: "R-16", title: "Free seat at a paid workshop or hackathon", cost: 1500, category: "Bigger rewards", icon: "🎟️", desc: "Covers the registration fee for one campus workshop or hackathon.", where: "Event coordinator" },
 
   // ── Plant perks (applied in the app)
-  { id: "R-19", title: "Streak shield", cost: 150, category: "Plant perks", icon: "🛡️", kind: "STREAK_SHIELD", desc: "Your next missed watering won't reset your streak (the −15 still applies). One per month.", where: "Applied to your adopted plant" },
-  { id: "R-20", title: "Name your campus plant", cost: 600, category: "Plant perks", icon: "🪧", kind: "NAMING_RIGHTS", desc: "Give the plant you've cared for all semester (90+ days) a name everyone sees.", where: "Shown on the plant everywhere" },
+  { id: "R-19", title: "Streak shield", cost: 250, category: "Plant perks", icon: "🛡️", kind: "STREAK_SHIELD", desc: "Your next missed watering won't reset your streak (the −15 still applies). One per month.", where: "Applied to your adopted plant" },
+  { id: "R-20", title: "Name your campus plant", cost: 1000, category: "Plant perks", icon: "🪧", kind: "NAMING_RIGHTS", desc: "Give the plant you've cared for all semester (90+ days) a name everyone sees.", where: "Shown on the plant everywhere" },
 
   // ── Merchandise
-  { id: "R-5", title: "RNSIT bamboo reusable coffee tumbler", cost: 500, category: "Merchandise", icon: "🌱", desc: "Reusable bamboo-fibre tumbler.", where: "Student welfare office" },
+  { id: "R-5", title: "RNSIT bamboo reusable coffee tumbler", cost: 800, category: "Merchandise", icon: "🌱", desc: "Reusable bamboo-fibre tumbler.", where: "Student welfare office" },
 ];
 
 export const STUDENT_LIFETIME_LEADERBOARD = [

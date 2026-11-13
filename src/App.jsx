@@ -138,7 +138,7 @@ function NotFound() {
 // ─── Auth-gated app shell ───────────────────────────────────────────────────
 function AppContent() {
   const { path, navigate, navKey } = useRouter();
-  const { currentUser, role, roleMeta, isAdmin, isStudent, updateCredits, addContribution, adjustPoints, logout } = useAuth();
+  const { currentUser, role, roleMeta, isAdmin, isStudent, updateCredits, addContribution, adjustPoints, getLiveUsers, logout } = useAuth();
   usePlantSettlement(adjustPoints, currentUser);
   useGlobalSpotlight();
   useRecentRoutes(path);
@@ -172,8 +172,9 @@ function AppContent() {
   // Derive credits from current user (falls back gracefully for admin)
   const userCredits = currentUser?.credits ?? 0;
   const setUserCredits = (updater) => {
-    const next = typeof updater === 'function' ? updater(userCredits) : updater;
-    updateCredits(next - userCredits);
+    const latestCredits = getLiveUsers().find(u => u.id === currentUser?.id)?.credits ?? userCredits;
+    const next = typeof updater === 'function' ? updater(latestCredits) : updater;
+    updateCredits(next - latestCredits);
   };
 
   // Request notification permission once on load
@@ -301,15 +302,16 @@ function AppContent() {
   };
 
   const handleReportBinOverflow = (binId) => {
+    if (bins.find(b => b.id === binId)?.fillLevel >= 90) return;
     handleUpdateBinFill(binId, 96);
     const targetBin = bins.find(b => b.id === binId) || { name: `Bin ${binId}`, block: 'Campus Grounds' };
     
     // Award student points and record in account history
-    setUserCredits(prev => prev + 35);
+    setUserCredits(prev => prev + 15);
     if (addContribution) {
       addContribution({
         action: `Reported Bin Overflow: ${targetBin.name}`,
-        points: 35,
+        points: 15,
         type: 'BOUNTY',
         status: 'APPROVED',
       });
@@ -317,9 +319,9 @@ function AppContent() {
 
     triggerEcoCelebration({
       title: '🚨 Bin Overflow Reported!',
-      message: `Maintenance alert dispatched for ${targetBin.name}. You earned +35 EcoCredits!`,
-      points: 35,
-      badge: '+35 EcoCredits',
+      message: `Maintenance alert dispatched for ${targetBin.name}. You earned +15 EcoCredits!`,
+      points: 15,
+      badge: '+15 EcoCredits',
     });
 
     actionMesh.createTicket({
@@ -461,7 +463,7 @@ function AppContent() {
       <EcoCopilot
         onActionTriggered={(action) => {
           if (action.type === 'REPORT_LEAK') {
-            setUserCredits(prev => prev + 30);
+            addContribution?.({ action: 'Reported resource leak through Eco Assistant', points: 10, type: 'BOUNTY', status: 'PENDING' });
           }
         }}
       />

@@ -52,7 +52,7 @@ export function AdminVerificationPage() {
 
   const handleApprove = (studentId, contributionId, defaultPoints) => {
     const pts = parseInt(customPoints[contributionId] ?? defaultPoints, 10) || defaultPoints;
-    approveContribution(studentId, contributionId, pts);
+    if (!approveContribution(studentId, contributionId, pts)) return;
     refresh();
     triggerEcoCelebration({
       title: '✅ Contribution Approved!',

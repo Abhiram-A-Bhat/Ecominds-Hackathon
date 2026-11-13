@@ -81,7 +81,8 @@ export const LeaderboardPage = ({ userCredits }) => {
         ? plantCareService.addShield(currentUser.id)
         : plantCareService.setNickname(currentUser.id, plantName);
       if (!res.ok) { setToast(res.reason); setTimeout(() => setToast(''), 4000); return; }
-      redeemReward?.(reward, reward.kind === 'STREAK_SHIELD' ? 'SHIELD-ACTIVE' : `NAMED-${res.plant.nickname}`);
+      const redeemed = redeemReward?.(reward, reward.kind === 'STREAK_SHIELD' ? 'SHIELD-ACTIVE' : `NAMED-${res.plant.nickname}`);
+      if (!redeemed) { setToast('Your EcoCredit balance changed. Please try redeeming again.'); setTimeout(() => setToast(''), 4000); return; }
       triggerConfetti();
       triggerEcoCelebration({
         title: reward.kind === 'STREAK_SHIELD' ? 'Streak shield on' : `Your ${res.plant.name} is now “${res.plant.nickname}”`,
@@ -94,7 +95,8 @@ export const LeaderboardPage = ({ userCredits }) => {
     }
     // redeemReward deducts the cost and records the voucher + history (once)
     const code = `RNSIT-${reward.id.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    redeemReward?.(reward, code);
+    const redeemed = redeemReward?.(reward, code);
+    if (!redeemed) { setToast('Your EcoCredit balance changed. Please try redeeming again.'); setTimeout(() => setToast(''), 4000); return; }
     triggerConfetti();
     triggerEcoCelebration({
       title: `Redeemed: ${reward.title}!`,

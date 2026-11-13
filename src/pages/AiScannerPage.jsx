@@ -25,6 +25,7 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
   const [errorMessage, setErrorMessage] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scanResult, setScanResult] = useState(PRESET_SCAN_ITEMS[0]);
+  const [pointsClaimed, setPointsClaimed] = useState(false);
   const [capturedSnapshot, setCapturedSnapshot] = useState(null);
 
   const videoRef = useRef(null);
@@ -49,6 +50,7 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
   const handlePhoneCapture = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setPointsClaimed(false);
     setErrorMessage('');
     setIsAnalyzing(true);
     const reader = new FileReader();
@@ -129,6 +131,7 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
 
   const handleSelectPreset = async (item) => {
     setIsAnalyzing(true);
+    setPointsClaimed(false);
     setCapturedSnapshot(null);
     await new Promise(r => setTimeout(r, 200));
     setScanResult(item);
@@ -136,13 +139,13 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
   };
 
   const handleClaimPoints = () => {
+    if (pointsClaimed) return;
     const pts = scanResult?.ecoCredits || 25;
     const targetUsn = customUsnInput.trim() ? customUsnInput.trim().toUpperCase() : selectedStudentUsn;
     const targetStudent = allStudents.find(s => s.usn === targetUsn);
 
-    if (allotVerifiedPoints) {
-      allotVerifiedPoints(targetUsn, pts, `AI Verified: ${scanResult?.name || 'Recyclable'} (Lab 104)`);
-    }
+    if (!allotVerifiedPoints?.(targetUsn, pts, `AI Verified: ${scanResult?.name || 'Recyclable'} (Lab 104)`)) return;
+    setPointsClaimed(true);
 
     triggerEcoCelebration({
       title: '✅ EcoCredits Allotted to Student!',
@@ -581,10 +584,11 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
               {/* Confirmation Allotment Button */}
               <button
                 onClick={handleClaimPoints}
+                disabled={pointsClaimed}
                 className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2"
               >
                 <IconCheckCircle className="w-4 h-4" />
-                Allot +{scanResult.ecoCredits} Verified PTS to {customUsnInput.trim() ? customUsnInput.trim().toUpperCase() : selectedStudentUsn}
+                {pointsClaimed ? 'Points Allotted for This Scan' : `Allot +${scanResult.ecoCredits} Verified PTS to ${customUsnInput.trim() ? customUsnInput.trim().toUpperCase() : selectedStudentUsn}`}
               </button>
             </div>
           )}

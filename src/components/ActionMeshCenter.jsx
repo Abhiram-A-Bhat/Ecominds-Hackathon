@@ -3,6 +3,7 @@ import { actionMesh } from '../services/actionMeshService';
 import { dispatchWithHermesAgent } from '../services/hermesService';
 import { triggerEcoCelebration } from '../utils/ecoCelebration';
 import { Link, useRouter } from '../router/Router';
+import { useAuth } from '../contexts/AuthContext';
 
 export function ActionMeshCenter({
   isOpen,
@@ -18,6 +19,11 @@ export function ActionMeshCenter({
   const [tickets, setTickets] = useState(actionMesh.getTickets());
   const [filter, setFilter] = useState('ACTIVE'); // 'ACTIVE' | 'RESOLVED' | 'ALL'
   const [hermesLoading, setHermesLoading] = useState({});
+  const { currentUser } = useAuth();
+  const rewardKey = `ecominds_actionmesh_rewards_${currentUser?.id || 'guest'}`;
+  const [rewardedTickets, setRewardedTickets] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(rewardKey) || '[]')); } catch { return new Set(); }
+  });
   const { navigate } = useRouter();
 
   useEffect(() => {
@@ -27,11 +33,14 @@ export function ActionMeshCenter({
   if (!isOpen) return null;
 
   const handleHermesDispatch = async (ticket) => {
+    if (ticket.status === 'RESOLVED') return;
+    if (hermesLoading[ticket.id]) return;
     setHermesLoading(prev => ({ ...prev, [ticket.id]: true }));
     try {
       const res = await dispatchWithHermesAgent(ticket);
       if (res && res.dispatch) {
         const d = res.dispatch;
+        if (!actionMesh.resolveTicket(ticket.id, `🤖 Resolved by Hermes Agent: ${d.resolution_summary || 'Tactical remediation executed.'}`)) return;
         // Mutate dependent state
         if (ticket.category === 'IOT_SURGE' && ticket.targetEntityId && onEmptyBin) {
           onEmptyBin(ticket.targetEntityId);
@@ -52,18 +61,20 @@ export function ActionMeshCenter({
           type: d.assigned_to?.type || "AUTOMATED"
         });
 
-        actionMesh.resolveTicket(
-          ticket.id,
-          `🤖 Resolved by Hermes Agent (v0.22.1 • Groq Qwen-27B): ${d.resolution_summary || 'Tactical remediation executed.'}`
-        );
-
-        setUserCredits(c => c + (d.bounty_points || 50));
-        if (onAddXp) onAddXp(80);
+        const alreadyRewarded = rewardedTickets.has(ticket.id);
+        if (!alreadyRewarded) {
+          const nextRewards = new Set([...rewardedTickets, ticket.id]);
+          localStorage.setItem(rewardKey, JSON.stringify([...nextRewards]));
+          setRewardedTickets(nextRewards);
+        }
+        const verifiedPoints = alreadyRewarded ? 0 : Math.min(50, Math.max(0, Number(d.bounty_points) || 0));
+        setUserCredits(c => c + verifiedPoints);
+        if (onAddXp && !alreadyRewarded) onAddXp(80);
         triggerEcoCelebration({
           title: '🤖 Hermes Executed!',
           message: `Autonomous action dispatched: ${d.resolution_summary || 'Tactical eco-remediation completed.'}`,
-          points: d.bounty_points || 50,
-          badge: `+${d.bounty_points || 50} EcoCredits`
+          points: verifiedPoints,
+          badge: `+${verifiedPoints} EcoCredits`
         });
       }
     } catch (err) {
@@ -74,6 +85,14 @@ export function ActionMeshCenter({
   };
 
   const handleResolve = (ticket) => {
+    if (!ticket || ticket.status === 'RESOLVED') return;
+    if (!actionMesh.resolveTicket(ticket.id, 'Autonomous resolution executed & validated by operator.')) return;
+    const alreadyRewarded = rewardedTickets.has(ticket.id);
+    if (!alreadyRewarded) {
+      const nextRewards = new Set([...rewardedTickets, ticket.id]);
+      localStorage.setItem(rewardKey, JSON.stringify([...nextRewards]));
+      setRewardedTickets(nextRewards);
+    }
     // Execute dependent state mutations based on category
     if (ticket.category === 'IOT_SURGE' && ticket.targetEntityId) {
       if (onEmptyBin) onEmptyBin(ticket.targetEntityId);
@@ -86,14 +105,14 @@ export function ActionMeshCenter({
       }));
     }
 
-    actionMesh.resolveTicket(ticket.id, "Autonomous resolution executed & validated by operator.");
-    setUserCredits(c => c + 40);
-    if (onAddXp) onAddXp(60);
+    const awardedPoints = alreadyRewarded ? 0 : 25;
+    if (awardedPoints) setUserCredits(c => c + awardedPoints);
+    if (onAddXp && !alreadyRewarded) onAddXp(60);
     triggerEcoCelebration({
       title: '✅ Ticket Resolved!',
       message: `Action Mesh ticket #${ticket.id} closed. Campus eco-impact registered to NAAC audit trail.`,
-      points: 40,
-      badge: '+40 EcoCredits'
+      points: awardedPoints,
+      badge: awardedPoints ? `+${awardedPoints} EcoCredits` : 'Ticket resolved'
     });
   };
 
@@ -381,7 +400,7 @@ export function ActionMeshCenter({
                           >
                             <span>{hermesLoading[t.id] ? '⏳ Hermes Reasoning...' : '🤖 Hermes Autonomous Dispatch'}</span>
                             <span style={{ fontSize: 9, opacity: 0.9, background: 'rgba(0,0,0,0.25)', padding: '1px 5px', borderRadius: 6 }}>
-                              +50 PTS
+                              {rewardedTickets.has(t.id) ? 'No repeat reward' : 'Up to +50 PTS'}
                             </span>
                           </button>
 
@@ -397,7 +416,7 @@ export function ActionMeshCenter({
                             }}
                           >
                             <span>✓ Manual Resolve</span>
-                            <span style={{ fontSize: 10, opacity: 0.9 }}>(+40 PTS)</span>
+                            <span style={{ fontSize: 10, opacity: 0.9 }}>{rewardedTickets.has(t.id) ? '(Reward already claimed)' : '(+25 PTS)'}</span>
                           </button>
                         </>
                       ) : (

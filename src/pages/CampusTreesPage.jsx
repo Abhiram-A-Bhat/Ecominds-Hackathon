@@ -50,6 +50,12 @@ export const CampusTreesPage = ({ trees, setTrees, userCredits, setUserCredits }
   };
 
   const handleAdopt = (tree) => {
+    if (!tree || tree.adoptedBy !== 'Open for Adoption') return;
+    const adoptionKey = `ecominds_campus_tree_adoptions_${currentUser?.id || 'guest'}`;
+    let adoptedIds = [];
+    try { adoptedIds = JSON.parse(localStorage.getItem(adoptionKey) || '[]'); } catch { /* ignore malformed cache */ }
+    if (adoptedIds.includes(tree.id)) return;
+    localStorage.setItem(adoptionKey, JSON.stringify([...adoptedIds, tree.id]));
     const adopterName = currentUser?.name ? `${currentUser.name} (${currentUser.usn || 'Student'})` : 'Student Volunteer';
     setTrees(prev => prev.map(t => {
       if (t.id === tree.id) {
@@ -61,11 +67,11 @@ export const CampusTreesPage = ({ trees, setTrees, userCredits, setUserCredits }
       return t;
     }));
 
-    setUserCredits(prev => prev + 50);
+    setUserCredits(prev => prev + 25);
     if (addContribution) {
       addContribution({
         action: `Adopted Campus Tree: ${tree.species}`,
-        points: 50,
+        points: 25,
         type: 'TREE',
         status: 'APPROVED',
       });
@@ -73,9 +79,9 @@ export const CampusTreesPage = ({ trees, setTrees, userCredits, setUserCredits }
 
     triggerEcoCelebration({
       title: '🌿 Tree Adopted!',
-      message: `You are now the proud guardian of ${tree.species} at ${tree.location}. Earned +50 EcoCredits!`,
-      points: 50,
-      badge: '+50 EcoCredits'
+      message: `You are now the proud guardian of ${tree.species} at ${tree.location}. Earned +25 EcoCredits!`,
+      points: 25,
+      badge: '+25 EcoCredits'
     });
 
     setAdoptingTree(null);
