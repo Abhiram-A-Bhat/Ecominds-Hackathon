@@ -8,6 +8,7 @@ import { SignOutIcon as LogOut } from '@phosphor-icons/react/dist/csr/SignOut';
 import { BroadcastIcon as Radar } from '@phosphor-icons/react/dist/csr/Broadcast';
 import { ArrowCounterClockwiseIcon as RotateCcw } from '@phosphor-icons/react/dist/csr/ArrowCounterClockwise';
 import { Router, useRouter, Link } from './router/Router';
+import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { Sidebar } from './components/shell/Sidebar';
 import { Topbar } from './components/shell/Topbar';
 import { MobileTabBar, MobileDrawer } from './components/shell/MobileNav';
@@ -192,7 +193,7 @@ function AppContent() {
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('🚨 Ecominds Alert: Bin Surge Detected', {
             body: `${bin.name} (${bin.block}) has reached ${bin.fillLevel}% — immediate collection needed.`,
-            icon: '/brand/guardian-campus-shield.png',
+            icon: '/brand/rnsit-25th-anniversary.png',
             tag: bin.id,
           });
         }
@@ -424,7 +425,9 @@ function AppContent() {
 
         <main id="main-content" style={{ maxWidth: 1320, margin: '0 auto', padding: 'clamp(16px, 3vw, 28px) clamp(14px, 3vw, 32px) 80px', width: '100%', flex: 1 }}>
           <div key={path} ref={routeViewRef} className="route-view">
-            {page}
+            <RouteErrorBoundary resetKey={path}>
+              {page}
+            </RouteErrorBoundary>
           </div>
         </main>
 
