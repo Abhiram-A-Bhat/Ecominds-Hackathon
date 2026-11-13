@@ -153,6 +153,7 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
             justifyContent: collapsed ? 'center' : 'flex-start',
             background: 'rgba(110,231,183,.04)', border: '1px solid var(--border)',
             transition: 'padding var(--dur-3) var(--ease-out)',
+            '--pulse-status': health > 0.8 ? '#34d399' : health > 0.5 ? '#fbbf24' : '#f87171',
           }}
           title="Campus bin health"
         >
@@ -160,7 +161,7 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
             <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(110,231,183,.12)" strokeWidth="3.5" />
             <circle
               cx="18" cy="18" r="15" fill="none"
-              stroke={health > 0.8 ? '#34d399' : health > 0.5 ? '#fbbf24' : '#f87171'}
+              stroke="var(--pulse-status)"
               strokeWidth="3.5" strokeLinecap="round"
               strokeDasharray={C} strokeDashoffset={C * (1 - health)}
               style={{ transition: 'stroke-dashoffset 1s var(--ease-out), stroke .4s' }}
