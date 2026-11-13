@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { IconZap, IconCpu, IconAlertTriangle, IconCheckCircle, IconUtensils } from './Icons';
-import { triggerConfetti } from '../utils/confetti';
 import { queryHermesAgent, transcribeVoiceAudio } from '../services/hermesService';
-import { actionMesh } from '../services/actionMeshService';
 import { useAuth } from '../contexts/AuthContext';
 
-export const EcoCopilot = ({ onActionTriggered }) => {
+export const EcoCopilot = () => {
   const { currentUser, isOperator: isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [agentMode, setAgentMode] = useState('hermes'); // 'hermes' | 'groq'
@@ -13,8 +11,8 @@ export const EcoCopilot = ({ onActionTriggered }) => {
     {
       role: 'assistant',
       text: isAdmin
-        ? "👋 Hello! Ecominds Operations Assistant ready. Ask me to dispatch maintenance squads, verify student drop-offs, analyze energy telemetry, or review NAAC green audit criteria."
-        : `👋 Hi ${currentUser?.name ? currentUser.name.split(' ')[0] : 'there'}! I'm your Campus Eco Assistant. Ask me anything about claiming free study gear, logging clean-plate meals, reporting tap leaks for points, or redeeming your EcoCredits!`,
+        ? "👋 Hi! I can explain any Ecominds feature available to admins, how to use it, and ways to make the RNSIT campus greener. I explain workflows, but I don't claim to dispatch or change anything for you."
+        : `👋 Hi ${currentUser?.name ? currentUser.name.split(' ')[0] : 'there'}! Ask me how to use Ecominds features available to you, understand points and rewards, or make our campus greener. I only answer Ecominds and campus sustainability questions.`,
       timestamp: 'Just now',
       agent: isAdmin ? 'Hermes Operations Agent' : 'Ecominds Assistant'
     }
@@ -376,32 +374,11 @@ export const EcoCopilot = ({ onActionTriggered }) => {
 
     try {
       if (agentMode === 'hermes') {
-        const data = await queryHermesAgent(query);
-        const actionTriggered = data.action;
-
-        // Autonomously execute real action in ActionMesh
-        if (actionTriggered) {
-          try {
-            actionMesh.createTicket({
-              title: actionTriggered.title || "Hermes Autonomous Remediation",
-              category: actionTriggered.category || "BIN_SURGE",
-              location: actionTriggered.location || "Reported Campus Sector",
-              severity: "CRITICAL",
-              detectedBy: "Hermes Autonomous Agent (Voice Dispatch)",
-              assignedTo: {
-                name: typeof actionTriggered.assigned_to === 'string' ? actionTriggered.assigned_to : (actionTriggered.assigned_to?.name || "Ground Ops Rapid Squad"),
-                role: "Lead Environmental Technologist",
-                type: "STAFF"
-              },
-              automatedResolution: data.reply,
-              impactMetric: `Avoids ~${actionTriggered.co2_saved_kg || 14} kg CO2e emissions`
-            });
-            triggerConfetti();
-            if (onActionTriggered) onActionTriggered(actionTriggered);
-          } catch (e) {
-            console.warn("ActionMesh ticket sync notice:", e);
-          }
-        }
+        const data = await queryHermesAgent(query, {
+          role: currentUser?.role,
+          current_page: window.location.pathname,
+          history: messages.slice(-10).map(({ role, text }) => ({ role, content: text })),
+        });
 
         const botMsg = {
           role: 'assistant',
@@ -409,7 +386,6 @@ export const EcoCopilot = ({ onActionTriggered }) => {
           timestamp: 'Just now',
           agent: data.agent || 'Hermes Agent v0.22.1',
           isHermes: true,
-          action: actionTriggered
         };
         setMessages(prev => [...prev, botMsg]);
         speakText(data.reply);
@@ -442,10 +418,6 @@ export const EcoCopilot = ({ onActionTriggered }) => {
           setMessages(prev => [...prev, botMsg]);
           speakText(data.reply);
 
-          if (data.action) {
-            triggerConfetti();
-            if (onActionTriggered) onActionTriggered(data.action);
-          }
         } else {
           throw new Error("Server error");
         }
@@ -454,7 +426,7 @@ export const EcoCopilot = ({ onActionTriggered }) => {
       // Local graceful fallback
       const fallbackMsg = {
         role: 'assistant',
-        text: "I recommend dropping old electronic parts into Locker #4 at the ECE Department for component testing and +50 EcoCredits!",
+        text: "I can explain Ecominds features and how to use them, or suggest practical ways to make the campus greener. The assistant service is temporarily unavailable; please try again shortly.",
         timestamp: 'Just now',
         agent: 'Ecominds Engine'
       };
@@ -803,7 +775,7 @@ export const EcoCopilot = ({ onActionTriggered }) => {
                     ? "Listening... Speak your campus query..." 
                     : isTranscribing 
                       ? "Groq Whisper transcribing audio..." 
-                      : "Ask Hermes or tap mic to speak..."
+                      : "Ask about Ecominds or campus greening..."
                 }
                 value={input}
                 onChange={(e) => setInput(e.target.value)}

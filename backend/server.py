@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException, File, UploadFile, Response, Request,
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from PIL import Image
+from assistant_knowledge import ASSISTANT_SCOPE, assistant_context_note, assistant_history
 
 def _load_env_file():
     """Read KEY=value lines from the project's .env (git-ignored) into os.environ."""
@@ -411,27 +412,7 @@ async def classify_phone_capture(websocket: WebSocket):
 # 2. Groq 120B Autonomous Voice & Chat Copilot with Strict Guardrails & Tool-Calling
 @app.post("/api/copilot")
 def copilot_chat(query: CopilotQuery):
-    system_prompt = """You are EcoSphere AI, the EXCLUSIVE campus sustainability, green campus, and e-waste management copilot for RNS Institute of Technology (RNSIT), Bengaluru.
-
-CRITICAL SCOPE & GUARDRAIL ENFORCEMENT RULES:
-1. You are STRICTLY RESTRICTED to topics concerning:
-   - Smart campus waste management, recycling, and bin locations (B-101 to B-107).
-   - Electronic waste (e-waste), hardware component salvage, circuit boards, batteries, and certified CPCB recycling.
-   - Cafeteria food waste, surplus food alerts, and wet scrap composter pipeline.
-   - Campus energy conservation, "phantom load" reporting, and water leak bounties.
-   - Campus biodiversity, tree adoption, and carbon sequestration.
-   - EcoCredits, student rewards, and department green cup leaderboards.
-
-2. STRICT REFUSAL FOR OFF-TOPIC REQUESTS:
-   If the user asks ANYTHING UNRELATED to campus waste, e-waste, or sustainability (for example: general programming/coding requests like "give me java code", homework, math, jokes, politics, or general chit-chat), YOU MUST FIRMLY AND POLITELY REFUSE.
-   State clearly that you are exclusively the RNSIT Eco-Copilot and redirect them back to campus sustainability:
-   "I am specialized exclusively as the RNSIT Campus Sustainability & Waste Management Copilot. I cannot assist with general programming, code generation, or unrelated requests. How can I help you recycle e-waste, locate a smart bin, or report campus energy waste today?"
-
-3. When answering on-topic queries, be concise (2-3 sentences), sharp, and practical.
-4. If appropriate, trigger an ACTION payload in JSON format at the very end of your response:
-   [[ACTION: {"type": "BOOK_LOCKER", "locker": "Locker #4 (ECE Block)", "pin": 4829}]]
-   or
-   [[ACTION: {"type": "REPORT_LEAK", "location": "Detected Location", "bounty": 30}]]"""
+    system_prompt = ASSISTANT_SCOPE + "\n\nFor this request, answer as the Ecominds product guide. Give useful step-by-step instructions when helpful. If the request is outside the allowed scope, politely refuse and redirect to Ecominds or campus greening. This is a question-and-answer assistant: never perform an action or return an action payload. Explain which app screen the user can use instead."
 
     try:
         headers = {
@@ -442,48 +423,36 @@ CRITICAL SCOPE & GUARDRAIL ENFORCEMENT RULES:
             "model": GROQ_MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                *[
-                    {"role": item.get("role"), "content": str(item.get("content", ""))[:2000]}
-                    for item in query.user_context.get("history", [])[-10:]
-                    if isinstance(item, dict) and item.get("role") in {"user", "assistant"} and item.get("content")
-                ],
+                assistant_context_note(query.user_context),
+                *assistant_history(query.user_context),
                 {"role": "user", "content": query.message}
             ],
-            "temperature": 0.4,
-            "max_tokens": 350
+            "temperature": 0.2,
+            "max_tokens": 700
         }
         res = requests.post(GROQ_URL, headers=headers, json=payload, timeout=6)
         if res.ok:
             content = res.json()["choices"][0]["message"]["content"]
             
-            # Check for executable action
-            action_data = None
-            if "[[ACTION:" in content:
-                try:
-                    start = content.index("[[ACTION:") + 9
-                    end = content.index("]]", start)
-                    action_json_str = content[start:end].strip()
-                    action_data = json.loads(action_json_str)
-                    content = content[:content.index("[[ACTION:")].strip()
-                except Exception:
-                    pass
+            # Chat is read-only: strip any accidental legacy action marker.
+            content = re.sub(r"\[\[ACTION:.*?\]\]", "", content, flags=re.DOTALL).strip()
 
             return {
                 "success": True,
                 "reply": content,
                 "model": "Groq GPT-OSS 120B",
-                "action": action_data
+                "action": None
             }
         else:
             return {
                 "success": False,
-                "reply": "EcoSphere Copilot: Ready to assist with e-waste dropoff, bin status, or cafeteria surplus!",
+                "reply": "I can explain Ecominds features and how to use them, or suggest practical ways to make the campus greener. Please try again in a moment.",
                 "model": "Local Fallback"
             }
     except Exception as e:
         return {
             "success": False,
-            "reply": f"EcoSphere Copilot: Hello! Drop e-waste at Locker #4 (ECE Dept) or visit /scanner to classify your materials.",
+            "reply": "I can explain Ecominds features and how to use them, or suggest practical ways to make the campus greener. The assistant service is temporarily unavailable; please try again shortly.",
             "error": str(e)
         }
 
@@ -667,29 +636,7 @@ def hermes_status():
 
 @app.post("/api/hermes/chat")
 def hermes_chat(query: HermesChatQuery):
-    system_prompt = """You are Hermes Autonomous Agent (v0.22.1), the Master Autonomous Dispatcher & Operations Director for RNSIT EcoSphere OS (Bengaluru).
-
-CRITICAL DIRECTIVE ON AUTONOMOUS AGENCY:
-1. You DO NOT instruct, tell, or advise the human user to perform manual tasks. YOU TAKE AUTONOMOUS ACTION YOURSELF.
-2. ALWAYS speak in the FIRST PERSON ACTIVE VOICE:
-   - Say: "⚡ I have dispatched Ground Ops Unit #2 to IT Block for bin compaction and replacement."
-   - Say: "I have re-routed the Ant Colony collection path and locked actuator #V-02."
-   - Say: "I have created Ticket #ACT-114 and credited 50 EcoBounty points for verification."
-   - NEVER say: "Dispatch the team...", "You should do this...", "Please go to...", or "Make sure to...".
-3. Keep your reply concise (2-3 sentences), punchy, and confident.
-4. If the user's message reports an incident, anomaly, or request (such as bin overflow, leaking tap, dry tree, food surplus, e-waste deposit, or energy surge), return a JSON object with:
-   - "reply": The natural language statement of what YOU have executed and dispatched (in first person).
-   - "action": {
-       "type": "DISPATCH_TICKET",
-       "title": concise title (e.g. "IT Block Bin Surge Remediation"),
-       "location": campus location,
-       "category": category ("BIN_SURGE", "WATER_CONSERVATION", "ENERGY_AUDIT", "EWASTE_SALVAGE", "FLORA_HEALTH"),
-       "assigned_to": specific responder (e.g. "Suresh M. (Ground Ops Zone 3)" or "Student Eco-Volunteer Squad" or "Smart Valve Actuator #V-02"),
-       "co2_saved_kg": estimated number (e.g. 14.5),
-       "impact": 1 concise sentence of impact
-     }
-If it is a general question or inquiry, return JSON with "reply" answering their question decisively and "action": null.
-Output MUST be a valid JSON object."""
+    system_prompt = ASSISTANT_SCOPE + "\n\nYou are answering through Ecominds assistant chat, not operating as an autonomous dispatcher. Give useful, actionable product guidance or campus sustainability advice. Refuse out-of-scope requests. Output MUST be a valid JSON object with exactly a string `reply` and `action` set to null. Do not dispatch, submit, award credits, or claim an action was taken."
 
     try:
         headers = {
@@ -701,11 +648,13 @@ Output MUST be a valid JSON object."""
             "model": HERMES_MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
+                assistant_context_note(query.user_context),
+                *assistant_history(query.user_context),
                 {"role": "user", "content": query.message}
             ],
             "response_format": {"type": "json_object"},
             "temperature": 0.2,
-            "max_tokens": 350
+            "max_tokens": 700
         }
         res = requests.post(GROQ_URL, headers=headers, json=payload, timeout=8)
         if res.ok:
@@ -714,7 +663,7 @@ Output MUST be a valid JSON object."""
             try:
                 parsed = json.loads(raw_content)
                 reply_text = parsed.get("reply", raw_content)
-                action_data = parsed.get("action")
+                action_data = None
             except Exception:
                 reply_text = raw_content
                 action_data = None
@@ -730,17 +679,11 @@ Output MUST be a valid JSON object."""
     except Exception as e:
         print(f">>> [Hermes Chat] Exception: {e}")
 
-    # High quality autonomous fallback if network hiccup
+    # Do not report a fake dispatch when the language service is unavailable.
     return {
-        "success": True,
-        "reply": f"⚡ I have autonomously dispatched Ground Ops Rapid Response Unit to investigate and resolve this issue. Ticket logged to Action Mesh.",
-        "action": {
-            "type": "DISPATCH_TICKET",
-            "title": "Autonomous Campus Remediation",
-            "location": "Reported Sector",
-            "assigned_to": "Ground Ops Rapid Squad",
-            "co2_saved_kg": 12.0
-        },
+        "success": False,
+        "reply": "I can explain Ecominds features and how to use them, or suggest practical ways to make the campus greener. The assistant service is temporarily unavailable; please try again shortly.",
+        "action": None,
         "agent": "Hermes Autonomous Agent v0.22.1",
         "model": HERMES_MODEL,
         "mode": "AUTONOMOUS_OPERATOR"

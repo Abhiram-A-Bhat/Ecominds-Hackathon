@@ -138,7 +138,7 @@ function NotFound() {
 // ─── Auth-gated app shell ───────────────────────────────────────────────────
 function AppContent() {
   const { path, navigate, navKey } = useRouter();
-  const { currentUser, role, roleMeta, isAdmin, isStudent, updateCredits, addContribution, adjustPoints, getLiveUsers, logout } = useAuth();
+  const { currentUser, role, roleMeta, isAdmin, isStudent, updateCredits, adjustPoints, getLiveUsers, logout } = useAuth();
   usePlantSettlement(adjustPoints, currentUser);
   useGlobalSpotlight();
   useRecentRoutes(path);
@@ -414,13 +414,7 @@ function AppContent() {
         quickActions={quickActions}
       />
 
-      <EcoCopilot
-        onActionTriggered={(action) => {
-          if (action.type === 'REPORT_LEAK') {
-            addContribution?.({ action: 'Reported resource leak through Eco Assistant', points: 10, type: 'BOUNTY', status: 'PENDING' });
-          }
-        }}
-      />
+      <EcoCopilot />
 
       <GamificationDrawer
         isOpen={isGamificationOpen}
