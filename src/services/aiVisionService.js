@@ -141,9 +141,32 @@ export const classifyImageWithYOLO26 = async (imageDataUrl) => {
   return PRESET_SCAN_ITEMS[randomIndex];
 };
 
+const getVisionSocketUrl = () => {
+  const configuredUrl = import.meta.env.VITE_VISION_WS_URL?.trim();
+  if (configuredUrl) {
+    if (!/^wss?:\/\//i.test(configuredUrl)) {
+      throw new Error('VITE_VISION_WS_URL must start with ws:// or wss://.');
+    }
+    return configuredUrl;
+  }
+
+  // An HTTPS site cannot open an insecure socket to a laptop on the LAN.
+  // In local Wi-Fi mode, the phone opens the laptop-hosted HTTP app instead.
+  if (window.location.protocol === 'https:') {
+    throw new Error('This deployed HTTPS page cannot reach your laptop camera service. Connect your phone to the same Wi-Fi and open Ecominds at http://<laptop-ip>:5173 instead.');
+  }
+
+  return `ws://${window.location.hostname}:8000/ws/classify`;
+};
+
 export const classifyPhoneCapture = (imageDataUrl) => new Promise((resolve, reject) => {
-  const scheme = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const socket = new WebSocket(`${scheme}//${window.location.hostname}:8000/ws/classify`);
+  let socket;
+  try {
+    socket = new WebSocket(getVisionSocketUrl());
+  } catch (error) {
+    reject(error);
+    return;
+  }
   let settled = false;
   const finish = (callback, value) => {
     if (settled) return;
@@ -153,8 +176,8 @@ export const classifyPhoneCapture = (imageDataUrl) => new Promise((resolve, reje
     callback(value);
   };
   const timeout = window.setTimeout(() => {
-    finish(reject, new Error('Vision service timed out. Check that the laptop backend is running and both devices share the same Wi-Fi.'));
-  }, 20000);
+    finish(reject, new Error('Vision service timed out. Check that the laptop backend is running, both devices share Wi-Fi, and port 8000 is allowed through the laptop firewall.'));
+  }, 60000);
   socket.onopen = () => {
     try { socket.send(JSON.stringify({ image: imageDataUrl })); }
     catch { finish(reject, new Error('Could not send the photo to the laptop vision service.')); }
@@ -175,4 +198,7 @@ export const classifyPhoneCapture = (imageDataUrl) => new Promise((resolve, reje
     } catch (error) { finish(reject, error); }
   };
   socket.onerror = () => finish(reject, new Error('Could not connect to the laptop vision WebSocket. Check the laptop IP and backend.'));
+  socket.onclose = () => {
+    if (!settled) finish(reject, new Error('The laptop vision service closed the connection before returning a result. Check its terminal and try again.'));
+  };
 });

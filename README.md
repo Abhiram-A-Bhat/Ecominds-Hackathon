@@ -29,6 +29,11 @@ reports, plant care, recycling, and campus operations.
    laptop firewall for the private Wi-Fi network. Do not use `localhost` on the
    phone: that points to the phone itself.
 
+The scanner is available to staff accounts. The deployed HTTPS site is not
+connected to a laptop running on your private Wi-Fi; open the laptop-hosted URL
+on the phone for scanning. If you host a separate secure WebSocket vision
+service, set `VITE_VISION_WS_URL` to its `wss://.../ws/classify` address.
+
 The CCTV screen uses stock demo footage, not an actual campus camera stream.
 The clip is [Pexels video 5823867](https://www.pexels.com/video/hallway-in-a-building-5823867/)
 and is labeled as stock footage in the player.

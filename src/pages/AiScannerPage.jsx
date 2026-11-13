@@ -244,6 +244,9 @@ export const AiScannerPage = ({ userCredits, setUserCredits, bins, onReportBinOv
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Open Ecominds on your phone to use its rear camera, or choose a photo from this device. The image is sent to the laptop vision service over WebSocket for classification.
                 </p>
+                <p className="text-[11px] text-amber-300/90 leading-relaxed">
+                  Phone and laptop must share Wi-Fi. On the phone, open the laptop-hosted page at <strong>http://&lt;laptop-ip&gt;:5173</strong>; this deployed site is not connected to your laptop service.
+                </p>
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
                   <button
                     onClick={() => phoneCaptureRef.current?.click()}
