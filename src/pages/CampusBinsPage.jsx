@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from '../router/Router';
 import { CampusMap } from '../components/CampusMap';
+import { RouteErrorBoundary } from '../components/RouteErrorBoundary';
 import { fetchCampusWeather } from '../services/weatherService';
 import { useAuth } from '../contexts/AuthContext';
 import { IconMapPin, IconCpu } from '../components/Icons';
@@ -147,7 +148,17 @@ export const CampusBinsPage = ({ bins, onEmptyBin, onReportBinOverflow, liveRead
                 Mock Campus Bin Network — {bins.filter(b => b.fillLevel >= 80).length} Bins Full
               </span>
             </div>
-            <CampusMap bins={bins} mode="bins" height="360px" />
+            <RouteErrorBoundary
+              resetKey="campus-bin-map"
+              fallback={(
+                <div role="status" style={{ minHeight: 260, display: 'grid', placeContent: 'center', gap: 8, textAlign: 'center', border: '1px solid var(--border)', borderRadius: 16, background: 'var(--surface)', color: 'var(--text-2)' }}>
+                  <strong style={{ color: 'var(--text)' }}>Map view is unavailable in this browser</strong>
+                  <span>The campus bin list below is still available.</span>
+                </div>
+              )}
+            >
+              <CampusMap bins={bins} mode="bins" height="360px" />
+            </RouteErrorBoundary>
           </div>
 
           {/* Mock Bins Grid */}
