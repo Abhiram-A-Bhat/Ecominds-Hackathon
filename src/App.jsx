@@ -260,10 +260,11 @@ function AppContent() {
     if (openTicket) {
       actionMesh.resolveTicket(openTicket.id, `Cleared & verified by Ground Ops at ${new Date().toLocaleTimeString()}`);
     }
+    guardianTaskService.completeAssignedTasksForTarget(binId, currentUser);
     triggerEcoCelebration({
       title: `Bin ${binId} Cleared & Compacted!`,
       message: "Diverted from landfill into campus circular sorting stream",
-      points: 35
+      points: 0
     });
   };
 
@@ -282,21 +283,28 @@ function AppContent() {
     if (newLevel >= 80) {
       triggerEcoCelebration({
         title: `🚨 IOT BIN SURGE: ${targetBin.name}!`,
-        message: `Ultrasonic sensor reports ${newLevel}% overfill! Auto-broadcasted to Green Guardians & Cleaner Ops route.`,
+        message: `Ultrasonic sensor reports ${newLevel}% full. A collection task was assigned to Ramesh K. in Ground Ops.`,
         points: 0,
         badge: `SURGE ${newLevel}%`
       });
 
-      guardianTaskService.createTask({
-        title: `IoT Sensor Alert: ${targetBin.name} (${binId}) Surged to ${newLevel}%`,
-        location: `${targetBin.block} (12.9018° N, 77.5184° E)`,
-        category: 'BIN_OVERFLOW',
-        severity: 'CRITICAL',
-        points: 35,
-        co2Saved: 'Prevents corridor littering & cross-stream contamination',
-        detectedBy: 'Ultrasonic HC-SR04 IoT Array',
-        appliances: 'Dry & Paper Waste Compactor',
-      });
+      const activeCollection = guardianTaskService.getTasks().some(task =>
+        task.category === 'BIN_OVERFLOW' && task.targetId === binId && task.status !== 'COMPLETED');
+      if (!activeCollection) {
+        guardianTaskService.createTask({
+          title: `Empty ${targetBin.name} (${binId}) — sensor at ${newLevel}%`,
+          targetId: binId,
+          assignedStaffId: 'staff-001',
+          assignedStaffName: 'Ramesh K.',
+          location: `${targetBin.block} (12.9018° N, 77.5184° E)`,
+          category: 'BIN_OVERFLOW',
+          severity: 'CRITICAL',
+          points: 0,
+          co2Saved: 'Prevents corridor littering & cross-stream contamination',
+          detectedBy: 'Ultrasonic HC-SR04 IoT Array',
+          appliances: 'Campus bin collection',
+        });
+      }
     }
   };
 

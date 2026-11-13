@@ -7,6 +7,7 @@ import { PowerIcon as Power } from '@phosphor-icons/react/dist/csr/Power';
 import { BroadcastIcon as Radar } from '@phosphor-icons/react/dist/csr/Broadcast';
 import { Link } from '../router/Router';
 import { useAuth } from '../contexts/AuthContext';
+import { inspectClassroomDemo } from '../services/cctvVisionService';
 
 const INITIAL_FEEDS = [
   {
@@ -91,6 +92,9 @@ export function CctvSentinelPage() {
   const [activeCameraId, setActiveCameraId] = useState('CAM-01');
   const [clock, setClock] = useState(new Date());
   const [tasks, setTasks] = useState(() => guardianTaskService.getTasks());
+  const [inspectionLoading, setInspectionLoading] = useState(false);
+  const [inspection, setInspection] = useState(null);
+  const [inspectionError, setInspectionError] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => setClock(new Date()), 1000);
@@ -116,17 +120,6 @@ export function CctvSentinelPage() {
     };
   });
 
-  // AI detection: any room empty for 15+ minutes with power drawing raises a
-  // Guardian alarm automatically. Nothing is ever switched off remotely.
-  useEffect(() => {
-    feeds.forEach(f => {
-      if (f.occupancyStatus !== 'EMPTY' || f.emptyDurationMins < 15) return;
-      const t = taskFor(f.id, guardianTaskService.getTasks()); // fresh read: never double-dispatch
-      if (t && (t.status !== 'COMPLETED' || t.createdAt > (f.emptiedAt || 0))) return;
-      dispatch(f, true);
-    });
-  }, [baseFeeds, tasks]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const activeFeed = feeds.find(f => f.id === activeCameraId) || feeds[0];
 
   const totalWastedKw = feeds
@@ -137,7 +130,7 @@ export function CctvSentinelPage() {
     .filter(f => f.occupancyStatus === 'EMPTY' && !f.cutoffTriggered)
     .reduce((acc, f) => acc + f.hourlyCostInr, 0);
 
-  function dispatch(feed, auto = false) {
+  function dispatch(feed) {
     const task = guardianTaskService.createTask({
       title: `Switch off ${feed.appliances.filter(a => a.active).length} appliances in empty ${feed.room}`,
       targetId: feed.id,
@@ -149,13 +142,40 @@ export function CctvSentinelPage() {
       detectedBy: `AI CCTV Sentinel (0 occupants for ${feed.emptyDurationMins} mins)`,
       appliances: feed.appliances.filter(a => a.active).map(a => a.name).join(', '),
     });
-    if (!auto) {
-      triggerEcoCelebration({
-        title: 'Guardian alarm sent',
-        message: `Every Green Guardian's phone is ringing for ${feed.room}. The first to slide takes it.`,
-        points: 0,
-        badge: `Task #${task.id}`,
-      });
+    triggerEcoCelebration({
+      title: 'Guardian alarm sent',
+      message: `Every Green Guardian's phone is ringing for ${feed.room}. The first to slide takes it.`,
+      points: 0,
+      badge: `Task #${task.id}`,
+    });
+  }
+
+  async function inspectGeneratedClassroom() {
+    setInspectionLoading(true);
+    setInspectionError('');
+    setInspection(null);
+    try {
+      const result = await inspectClassroomDemo();
+      setInspection(result);
+      const equipmentOn = result.lights_on || result.fans_on || result.projector_on;
+      if (result.empty_room && equipmentOn) {
+        const active = guardianTaskService.getTasks().find(t => t.targetId === 'CCTV-DEMO-CLASSROOM' && t.status !== 'COMPLETED');
+        if (!active) guardianTaskService.createTask({
+          title: 'DEMO: Check generated classroom and switch off equipment',
+          targetId: 'CCTV-DEMO-CLASSROOM',
+          location: 'Synthetic classroom image — demo only, not a real campus location',
+          category: 'ENERGY_CUTOFF', severity: 'HIGH', points: 20,
+          detectedBy: 'Groq vision analysis of a generated demo image',
+          appliances: ['lights', 'fans', 'projector'].filter(k => result[`${k}_on`]).map(k => `${k} detected on`).join(', '),
+          co2Saved: 'Potential energy saving; verify in person before action',
+          instructions: 'This alarm comes from a generated demo image. Do not treat it as a real campus detection; physically verify the room before acting.',
+          source: 'synthetic-demo-image',
+        });
+      }
+    } catch (error) {
+      setInspectionError(error.message || 'Could not inspect the demo image. Check that the local backend and Groq key are configured.');
+    } finally {
+      setInspectionLoading(false);
     }
   }
 
@@ -180,10 +200,10 @@ export function CctvSentinelPage() {
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
             <IconVideo className="w-6 h-6 text-emerald-400" />
-            AI CCTV Occupancy Sentinel
+            AI CCTV Occupancy Sentinel · Demo
           </h1>
           <p className="text-xs text-slate-400">
-            Endpoint: <code className="text-emerald-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/cctv-sentinel</code> • Computer vision spots empty rooms with power left on and rings every Green Guardian. Nothing is switched off remotely — a Guardian checks the room in person and turns it off by hand.
+            Endpoint: <code className="text-emerald-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/cctv-sentinel</code> • Stock CCTV-style footage and simulated room telemetry are for demonstration. The generated still below can be analyzed on demand; it never represents a live campus camera. A Guardian must verify any room in person.
           </p>
         </div>
 
@@ -210,12 +230,12 @@ export function CctvSentinelPage() {
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  LIVE SURVEILLANCE FEED • {activeFeed.id} ({activeFeed.room})
+                  STOCK CCTV-STYLE DEMO • {activeFeed.id} ({activeFeed.room})
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-mono text-emerald-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                  {clock.toLocaleTimeString('en-IN')} IST
+                  DEMO · {clock.toLocaleTimeString('en-IN')} IST
                 </span>
                 <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
                   {activeFeed.fps} FPS • {activeFeed.res}
@@ -294,10 +314,10 @@ export function CctvSentinelPage() {
               {/* Bottom camera bar */}
               <div className="flex justify-between items-end pointer-events-none z-10">
                 <span className="text-[9px] font-mono text-slate-500 bg-black/80 px-2 py-0.5 rounded">
-                  ALGORITHM: YOLO-POSE OCCUPANCY HEAD v4.2
+                    STOCK VIDEO · SIMULATED TELEMETRY
                 </span>
                 <span className="text-[9px] font-mono text-emerald-400 bg-black/80 px-2 py-0.5 rounded">
-                  BITRATE: 4.2 MBPS
+                    DEMO FEED
                 </span>
               </div>
             </div>
@@ -326,6 +346,24 @@ export function CctvSentinelPage() {
               ))}
             </div>
           </div>
+
+          <section className="bg-slate-900 rounded-2xl p-4 border border-slate-800 space-y-3">
+            <div>
+              <h2 className="text-sm font-black text-white">Generated empty classroom · vision demo</h2>
+              <p className="text-[11px] text-amber-300 mt-1">Synthetic image used for testing only. It is not a live camera feed or a real campus alert.</p>
+            </div>
+            <img src="/cctv/classroom-empty-demo.jpg" alt="Generated demo image of an empty classroom with lights, fans and projector on" className="w-full max-h-[420px] object-contain bg-black rounded-xl border border-slate-800" />
+            <button type="button" disabled={inspectionLoading} onClick={inspectGeneratedClassroom} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold">
+              {inspectionLoading ? 'Inspecting image…' : 'Run vision inspection'}
+            </button>
+            {inspectionError && <p role="alert" className="text-xs text-red-300">{inspectionError}</p>}
+            {inspection && <div className="rounded-xl bg-slate-950 p-3 text-xs text-slate-200 space-y-1">
+              <p>Room empty: <b>{inspection.empty_room ? 'Yes' : 'No'}</b> · Confidence: <b>{Math.round((inspection.confidence || 0) * 100)}%</b></p>
+              <p>Lights {inspection.lights_on ? 'on' : 'not detected on'} · Fans {inspection.fans_on ? 'on' : 'not detected on'} · Projector {inspection.projector_on ? 'on' : 'not detected on'}</p>
+              <p className="text-slate-400">{inspection.evidence}</p>
+              {inspection.empty_room && (inspection.lights_on || inspection.fans_on || inspection.projector_on) && <p className="text-amber-300">Guardian alarm sent for an in-person check. This is a synthetic demo result.</p>}
+            </div>}
+          </section>
         </div>
 
         {/* Right Column: Room Control & Green Guardian Task Dispatch */}

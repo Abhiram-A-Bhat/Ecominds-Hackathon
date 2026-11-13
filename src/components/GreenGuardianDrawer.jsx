@@ -92,7 +92,7 @@ function TaskCard({ task, me, isStudent, onClaim, onComplete, index }) {
       </div>
 
       {task.status === 'OPEN' && isStudent && !canClaimTask(task, me) && (
-        <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', gap: 6, alignItems: 'center' }}><Lock size={12} /> {task.ownerId === me?.id ? 'Your own plant — water it from Adopt-a-Plant.' : 'Plant rescue: only for Guardians without their own plant.'}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', gap: 6, alignItems: 'center' }}><Lock size={12} /> {task.assignedStaffId ? `Assigned to ${task.assignedStaffName || 'Ground Staff'} for collection.` : task.ownerId === me?.id ? 'Your own plant — water it from Adopt-a-Plant.' : 'Plant rescue: only for Guardians without their own plant.'}</div>
       )}
       {task.status === 'OPEN' && isStudent && canClaimTask(task, me) && (
         <SlideToAccept height={52} accent={meta.accent} label="Slide to claim" onAccept={() => onClaim(task)} />
@@ -168,12 +168,13 @@ export function GreenGuardianDrawer({ isOpen, onClose }) {
 
   const mineCount = tasks.filter(t => t.status === 'CLAIMED' && t.claimedBy?.id === currentUser?.id).length;
   const filters = [
-    { id: 'OPEN', label: 'Open', n: tasks.filter(t => t.status === 'OPEN').length },
+    { id: 'OPEN', label: 'Open', n: tasks.filter(t => t.status === 'OPEN' && (!isStudent || !t.assignedStaffId)).length },
     ...(isStudent ? [{ id: 'MINE', label: 'My missions', n: mineCount }] : [{ id: 'CLAIMED', label: 'In progress', n: tasks.filter(t => t.status === 'CLAIMED').length }]),
     { id: 'COMPLETED', label: 'Done', n: tasks.filter(t => t.status === 'COMPLETED').length },
   ];
   const shown = tasks.filter(t =>
-    filter === 'MINE' ? t.status === 'CLAIMED' && t.claimedBy?.id === currentUser?.id : t.status === filter);
+    (filter === 'MINE' ? t.status === 'CLAIMED' && t.claimedBy?.id === currentUser?.id : t.status === filter) &&
+    (!isStudent || !t.assignedStaffId));
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', justifyContent: 'flex-end' }} role="dialog" aria-modal="true" aria-label="Green Guardian missions">

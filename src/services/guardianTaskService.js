@@ -30,6 +30,8 @@ const SEED = [
     title: 'Bin B-102 is 98% full — swap the liner',
     category: 'BIN_OVERFLOW',
     targetId: 'B-102',
+    assignedStaffId: 'staff-001',
+    assignedStaffName: 'Ramesh K.',
     location: 'Computer Science Block, 2nd Floor Corridor East',
     severity: 'CRITICAL',
     points: 35,
@@ -39,6 +41,22 @@ const SEED = [
     claimedBy: null,
     appliances: 'Dry & Paper Waste Compactor',
     createdAt: Date.now() - 8 * 60e3,
+  },
+  {
+    id: 'GRD-206',
+    title: 'Empty Student Cafeteria Plaza bin B-103 — 86% full',
+    category: 'BIN_OVERFLOW',
+    targetId: 'B-103',
+    assignedStaffId: 'staff-001',
+    assignedStaffName: 'Ramesh K.',
+    location: 'Food Court, Ground Floor',
+    severity: 'CRITICAL',
+    points: 0,
+    detectedBy: 'Campus bin monitoring',
+    status: 'OPEN',
+    claimedBy: null,
+    appliances: 'Organic & Food Waste Bin',
+    createdAt: Date.now() - 6 * 60e3,
   },
   {
     id: 'GRD-203',
@@ -75,7 +93,7 @@ const SEED = [
 const DETECTIONS = [
   { title: 'Switch off fans & lights in empty CSE Lab 3', category: 'ENERGY_CUTOFF', targetId: 'CAM-02', location: 'Computer Science Block, 2nd Floor', severity: 'CRITICAL', points: 40, co2Saved: '3.9 kg CO2e / hr', detectedBy: 'AI CCTV Sentinel (0 occupants for 16 mins)', appliances: '16 Workstations, 1 AC, 6 Tube Lights' },
   { title: 'Turn off halogen bay lights in empty CAD Annex', category: 'ENERGY_CUTOFF', targetId: 'CAM-04', location: 'Mechanical Workshop Yard, Ground Floor', severity: 'HIGH', points: 40, co2Saved: '2.4 kg CO2e / hr', detectedBy: 'AI CCTV Sentinel (0 occupants for 19 mins)', appliances: '2 Exhaust Fans, Halogen Array, Air Blower' },
-  { title: 'Bin B-207 surged to 94% — swap the liner', category: 'BIN_OVERFLOW', targetId: 'B-207', location: 'Library Block, Ground Floor Lobby', severity: 'CRITICAL', points: 35, co2Saved: 'Prevents overflow litter', detectedBy: 'Ultrasonic HC-SR04 IoT Array', appliances: 'Wet Waste Bin' },
+  { title: 'Bin B-207 surged to 94% — swap the liner', category: 'BIN_OVERFLOW', targetId: 'B-207', assignedStaffId: 'staff-001', assignedStaffName: 'Ramesh K.', location: 'Library Block, Ground Floor Lobby', severity: 'CRITICAL', points: 35, co2Saved: 'Prevents overflow litter', detectedBy: 'Ultrasonic HC-SR04 IoT Array', appliances: 'Wet Waste Bin' },
   { title: 'Hydrate the sun-stressed Gulmohar #03', category: 'FLORA_CARE', location: 'Cafeteria Outdoor Garden Lawn', severity: 'MEDIUM', points: 25, co2Saved: 'Protects 28 kg CO2/yr capture', detectedBy: 'Soil moisture probe (12% VWC)', appliances: 'Garden Hydration Station #03' },
   { title: 'Shut a hissing urinal flush valve', category: 'WATER_LEAK', location: 'Civil Block, 2nd Floor Restroom', severity: 'HIGH', points: 30, co2Saved: '~20 litres / hour saved', detectedBy: 'Smart water meter anomaly', appliances: 'Flush Valve #C-11' },
 ];
@@ -83,7 +101,15 @@ const DETECTIONS = [
 function load() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY));
-    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw)) {
+      const migrated = raw.map(task => task.category === 'BIN_OVERFLOW'
+        ? { ...task, assignedStaffId: task.assignedStaffId || 'staff-001', assignedStaffName: task.assignedStaffName || 'Ramesh K.' }
+        : task);
+      if (!migrated.some(task => task.id === 'GRD-206' || task.targetId === 'B-103' && task.category === 'BIN_OVERFLOW')) {
+        migrated.push({ ...SEED.find(task => task.id === 'GRD-206') });
+      }
+      return migrated;
+    }
   } catch { /* fall through */ }
   return SEED.map(t => ({ ...t }));
 }
@@ -118,6 +144,7 @@ export function timeAgo(ts) {
 /** Plant rescues go only to Guardians who don't already look after a plant (and never the owner). */
 export function canClaimTask(task, guardian) {
   if (!guardian) return false;
+  if (task.assignedStaffId) return false;
   if (task.ownerId && task.ownerId === guardian.id) return false;
   if (task.eligibility === 'NON_PLANT_OWNER' && guardian.ownsPlant) return false;
   return true;
@@ -129,7 +156,7 @@ export const guardianTaskService = {
   },
 
   getOpenCount() {
-    return tasks.filter(t => t.status === 'OPEN').length;
+    return tasks.filter(t => t.status === 'OPEN' && !t.assignedStaffId).length;
   },
 
   subscribe(listener) {
@@ -143,7 +170,12 @@ export const guardianTaskService = {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return { success: false, message: 'Task not found.' };
     if (!canClaimTask(task, guardian)) {
-      return { success: false, task, message: task.ownerId === guardian?.id ? 'This is your own plant — water it from Adopt-a-Plant.' : 'Only Guardians without an adopted plant can take this rescue.' };
+      const message = task.assignedStaffId
+        ? `This collection task is assigned to ${task.assignedStaffName || 'Ground Staff'}.`
+        : task.ownerId === guardian?.id
+          ? 'This is your own plant — water it from Adopt-a-Plant.'
+          : 'Only Guardians without an adopted plant can take this rescue.';
+      return { success: false, task, message };
     }
     if (task.status !== 'OPEN') {
       notify();
@@ -178,6 +210,25 @@ export const guardianTaskService = {
     if (proofPhoto) task.proofPhoto = proofPhoto;
     save(); notify();
     return { success: true, task, points: task.points };
+  },
+
+  completeAssignedTasksForTarget(targetId, staffUser) {
+    if (!staffUser || !['STAFF', 'ADMIN'].includes(staffUser.role)) return 0;
+    tasks = load();
+    let completed = 0;
+    tasks = tasks.map(task => {
+      if (task.targetId !== targetId || (staffUser.role !== 'ADMIN' && task.assignedStaffId !== staffUser.id) || task.status === 'COMPLETED') return task;
+      completed++;
+      return {
+        ...task,
+        status: 'COMPLETED',
+        completedAt: timeNow(),
+        completedBy: { id: staffUser.id, name: staffUser.name },
+        completionNotes: 'Bin emptied and collection verified by assigned ground staff.',
+      };
+    });
+    if (completed) { save(); notify(); }
+    return completed;
   },
 
   /** Withdraw an open task that is no longer needed (e.g. the owner watered after all). */

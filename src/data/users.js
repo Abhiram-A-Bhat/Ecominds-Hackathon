@@ -42,18 +42,6 @@ export const MOCK_USERS = [
     avatar: '👷',
     department: 'Estate & Maintenance',
   },
-  {
-    id: 'staff-002',
-    role: 'STAFF',
-    name: 'Lakshmi N.',
-    designation: 'Lab 104 Technician & Flora Caretaker',
-    email: 'lakshmi.n@rnsit.ac.in',
-    username: 'lakshmi',
-    password: 'flora@2026',
-    avatar: '👩‍🔧',
-    department: 'ECE Labs',
-  },
-
   // ── STUDENT ACCOUNTS ─────────────────────────────────────────────────────
   {
     id: 'stu-abhiram',

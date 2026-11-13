@@ -2,7 +2,7 @@
 // Merged circular campus hub: Seniors donate notes, calculators, drafters & components.
 // Juniors in need receive items for free; seniors earn verified EcoCredits.
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { triggerEcoCelebration } from '../utils/ecoCelebration';
 import { Link } from '../router/Router';
@@ -165,8 +165,24 @@ const BRANCH_FILTERS = [
 ];
 
 export function ExchangePage({ userCredits, setUserCredits }) {
-  const { currentUser, isAdmin, addContribution, addDonation, addClaimedItem, approveDonation } = useAuth();
+  const { currentUser, isOperator: isAdmin, getAllUsers, addContribution, addDonation, addClaimedItem, approveDonation } = useAuth();
   const [items, setItems] = useState(globalDonations);
+  const savedDonations = getAllUsers().flatMap(user => (user.handMeDowns?.donated || []).map(donation => ({
+    ...donation,
+    description: donation.description || 'Donated to help RNSIT students.',
+    targetBranch: donation.targetBranch || 'All Branches',
+    donorName: donation.donorName || 'Student',
+    donorUSN: donation.donorUSN || '',
+    pointsAwarded: donation.pointsAwarded ?? donation.points ?? 10,
+    listedAt: donation.date || 'Recently',
+    condition: donation.condition || 'Condition to be verified',
+  })));
+  useEffect(() => {
+    const savedIds = new Set(savedDonations.map(item => item.id));
+    const merged = [...savedDonations, ...globalDonations.filter(item => !savedIds.has(item.id))];
+    globalDonations = merged;
+    setItems(merged);
+  }, [currentUser?.id, currentUser?.handMeDowns?.donated]);
   const receivedKey = `ecominds_exchange_claims_${currentUser?.id || 'guest'}`;
   const [claimedIds, setClaimedIds] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem(receivedKey) || '[]')); } catch { return new Set(); }
@@ -258,8 +274,9 @@ export function ExchangePage({ userCredits, setUserCredits }) {
   };
 
   const handleApproveDonation = (item) => {
-    if (!approveDonation?.(item.id, item.pointsAwarded)) return;
-    const updated = items.map(row => row.id === item.id ? { ...row, status: 'AVAILABLE' } : row);
+    const award = Math.min(30, Math.max(0, Math.round(Number(item.pointsAwarded) || 0)));
+    if (!approveDonation?.(item.id, award)) return;
+    const updated = items.map(row => row.id === item.id ? { ...row, status: 'AVAILABLE', pointsAwarded: award } : row);
     globalDonations = updated;
     setItems(updated);
   };
@@ -753,7 +770,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {item.status === 'PENDING_ADMIN' && <button type="button" onClick={() => handleApproveDonation(item)} className="rounded bg-emerald-700 px-2 py-1 text-[10px] font-bold text-white">Verify &amp; award {item.pointsAwarded} pts</button>}
+                  {item.status === 'PENDING_ADMIN' && <button type="button" onClick={() => handleApproveDonation(item)} className="rounded bg-emerald-700 px-2 py-1 text-[10px] font-bold text-white">Verify &amp; award {Math.min(30, item.pointsAwarded)} pts</button>}
                   {item.status !== 'PENDING_ADMIN' && <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded">+{item.pointsAwarded || 10} pts</span>}
                   <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
                     {item.status}

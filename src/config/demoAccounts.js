@@ -22,7 +22,6 @@ export const INTERFACES = [
     features: ['Collection routing', 'CCTV Sentinel → Guardian alarms', 'Overseer report review', 'AI material scanner'],
     accounts: [
       { name: 'Ramesh K.', meta: 'Ground Ops · Zone 2', id: 'ramesh', pw: 'ranger@2026', avatar: '👷' },
-      { name: 'Lakshmi N.', meta: 'Lab 104 & Flora', id: 'lakshmi', pw: 'flora@2026', avatar: '👩‍🔧' },
     ],
   },
   {

@@ -78,7 +78,7 @@ export const ROUTES = {
   '/exchange': {
     title: { STUDENT: 'Pass-The-Torch', ADMIN: 'Pass-The-Torch Review' }, short: 'Exchange',
     desc: { STUDENT: 'Free senior gear, notes and lab kits', ADMIN: 'Verify and dispatch donated gear' },
-    icon: Recycle, accent: '#a78bfa', roles: [STUDENT, ADMIN],
+    icon: Recycle, accent: '#a78bfa', roles: ALL,
   },
   '/leaderboard': {
     title: 'Rewards & Leaderboard', short: 'Rewards', desc: 'Redeem EcoCredits and climb the ranks',
@@ -154,7 +154,7 @@ export const NAV_GROUPS = {
     { label: 'Overview', items: ['/'] },
     { label: 'Field Ops', items: ['/cleaner-ops', '/bins', '/cctv-sentinel', '/bounties'] },
     { label: 'Verification', items: ['/plant-reports', '/admin-verify', '/scanner'] },
-    { label: 'Resources', items: ['/ewaste', '/mess', '/trees'] },
+    { label: 'Resources', items: ['/ewaste', '/exchange', '/mess', '/trees'] },
   ],
   ADMIN: [
     { label: 'Overview', items: ['/', '/admin'] },

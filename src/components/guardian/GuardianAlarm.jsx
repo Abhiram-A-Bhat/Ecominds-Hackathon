@@ -53,7 +53,7 @@ export function GuardianAlarm({ onOpenMissions }) {
       tasks.forEach(t => {
         if (seen.current.has(t.id)) return;
         seen.current.add(t.id);
-        if (primed && t.status === 'OPEN' && canClaimTask(t, asGuardian(currentUser))) fresh.push(t);
+        if (primed && t.status === 'OPEN' && !t.assignedStaffId && canClaimTask(t, asGuardian(currentUser))) fresh.push(t);
       });
       primed = true;
       try { sessionStorage.setItem(seenKey, JSON.stringify([...seen.current])); } catch { /* ignore */ }

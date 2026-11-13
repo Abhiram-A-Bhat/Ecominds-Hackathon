@@ -138,7 +138,7 @@ export function Topbar({ userCredits, onOpenSearch, onOpenGamification, onOpenAc
   const { scrolled, progress } = useScrollState();
   const [openTasks, setOpenTasks] = useState(() => guardianTaskService.getOpenCount());
 
-  useEffect(() => guardianTaskService.subscribe(tasks => setOpenTasks(tasks.filter(t => t.status === 'OPEN').length)), []);
+  useEffect(() => guardianTaskService.subscribe(tasks => setOpenTasks(tasks.filter(t => t.status === 'OPEN' && !t.assignedStaffId).length)), []);
 
   const Icon = route?.icon;
 

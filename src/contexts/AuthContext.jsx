@@ -41,7 +41,10 @@ function hydrate() {
         if (!saved) return s;
         return { ...s, ...saved, lifetimePoints: Number(saved.lifetimePoints ?? saved.credits ?? s.credits ?? 0) };
       });
-      stored.forEach(u => { if (!merged.some(m => m.id === u.id)) merged.push(u); });
+      stored.forEach(u => {
+        if (u.role === 'STAFF' && !seeds.some(seed => seed.id === u.id)) return;
+        if (!merged.some(m => m.id === u.id)) merged.push(u);
+      });
       return merged;
     }
   } catch { /* corrupt or unavailable storage → seeds */ }

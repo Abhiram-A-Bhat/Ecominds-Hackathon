@@ -28,8 +28,8 @@ export function AdminVerificationPage() {
     return (
       <div className="text-center py-20">
         <div style={{ fontSize: 48, marginBottom: 12 }}>🚫</div>
-        <p className="text-red-400 font-bold text-lg">Admin Access Required</p>
-        <p className="text-slate-500 text-sm mt-2">This page is only accessible to administrators.</p>
+        <p className="text-red-400 font-bold text-lg">Staff Access Required</p>
+        <p className="text-slate-500 text-sm mt-2">This page is available to the assigned Eco Ranger and administrators.</p>
         <Link to="/" className="mt-4 inline-block text-emerald-400 hover:underline text-sm">← Back to Home</Link>
       </div>
     );

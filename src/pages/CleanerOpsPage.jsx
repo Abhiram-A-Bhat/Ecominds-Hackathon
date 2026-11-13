@@ -3,10 +3,16 @@ import { IconNavigation, IconCheckCircle, IconZap, IconCpu, IconMapPin, IconAler
 import { triggerConfetti } from '../utils/confetti';
 import { Link } from '../router/Router';
 import { CampusMap } from '../components/CampusMap';
+import { useAuth } from '../contexts/AuthContext';
+import { guardianTaskService } from '../services/guardianTaskService';
 
 export const CleanerOpsPage = ({ bins, onEmptyBin }) => {
+  const { currentUser } = useAuth();
   const [predictions, setPredictions] = useState(null);
   const [forecasterOffline, setForecasterOffline] = useState(false);
+  const [tasks, setTasks] = useState(() => guardianTaskService.getTasks());
+
+  useEffect(() => guardianTaskService.subscribe(setTasks), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -29,6 +35,8 @@ export const CleanerOpsPage = ({ bins, onEmptyBin }) => {
   const routeOrder = [...bins]
     .sort((a, b) => b.fillLevel - a.fillLevel)
     .map(b => b.id);
+  const assignedCollections = tasks.filter(task => task.category === 'BIN_OVERFLOW' && task.status !== 'COMPLETED' &&
+    (currentUser?.role === 'ADMIN' || task.assignedStaffId === currentUser?.id));
 
   return (
     <div className="space-y-6">
@@ -62,6 +70,25 @@ export const CleanerOpsPage = ({ bins, onEmptyBin }) => {
           </div>
         </div>
       </div>
+
+      <section className="rounded-2xl border border-orange-500/30 bg-slate-900/90 p-5 space-y-3">
+        <div className="flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <h2 className="text-sm font-black text-white">Assigned bin collection tasks</h2>
+            <p className="text-[11px] text-slate-400">Ground staff marks a bin empty after physically collecting the waste. No student points are awarded for staff work.</p>
+          </div>
+          <span className="text-[10px] font-bold text-orange-300">{currentUser?.name || 'Staff'} · {assignedCollections.length} open</span>
+        </div>
+        {assignedCollections.length ? <div className="grid gap-2 sm:grid-cols-2">
+          {assignedCollections.map(task => {
+            const bin = bins.find(item => item.id === task.targetId);
+            return <article key={task.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-950 p-3 border border-slate-800">
+              <div><p className="text-xs font-bold text-white">{task.title}</p><p className="text-[10px] text-slate-400">{task.location} · {bin?.fillLevel ?? '—'}% full</p></div>
+              <button type="button" onClick={() => onEmptyBin(task.targetId)} className="shrink-0 rounded-lg bg-orange-600 px-3 py-2 text-[10px] font-bold text-white hover:bg-orange-500">Mark emptied</button>
+            </article>;
+          })}
+        </div> : <p className="text-xs text-slate-400">No open collection tasks assigned to this account.</p>}
+      </section>
 
       {/* ── Live Route Map (Mapbox) ────────────────────────── */}
       <div>
