@@ -30,6 +30,7 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
   const resizeFrameRef = useRef(null);
   const [currentZoom, setCurrentZoom] = useState(17.2);
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark');
+  const [mapUnavailable, setMapUnavailable] = useState(false);
 
   useEffect(() => {
     const onThemeChange = (event) => setTheme(event.detail || document.documentElement.dataset.theme || 'dark');
@@ -39,8 +40,15 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
 
   useEffect(() => {
     if (!containerRef.current) return;
+    if (!mapboxgl.accessToken) {
+      setMapUnavailable(true);
+      return undefined;
+    }
+    setMapUnavailable(false);
 
-    const map = new mapboxgl.Map({
+    let map;
+    try {
+      map = new mapboxgl.Map({
       container: containerRef.current,
       style: theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11',
       center: RNSIT_CENTER,
@@ -54,7 +62,12 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
       dragRotate: false,
       touchPitch: false,
       attributionControl: false,
-    });
+      });
+    } catch (error) {
+      console.error('Campus map could not initialize:', error);
+      setMapUnavailable(true);
+      return undefined;
+    }
 
     mapRef.current = map;
 
@@ -439,7 +452,14 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
         </button>
       </div>
 
-      <div ref={containerRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+      {mapUnavailable ? (
+        <div role="status" style={{ position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', gap: 8, textAlign: 'center', padding: 24, background: 'var(--surface)', color: 'var(--text-2)' }}>
+          <strong style={{ color: 'var(--text)' }}>Map service is not configured</strong>
+          <span>Campus bin details remain available below.</span>
+        </div>
+      ) : (
+        <div ref={containerRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+      )}
     </div>
   );
 }
