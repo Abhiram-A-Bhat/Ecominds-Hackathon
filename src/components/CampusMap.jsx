@@ -27,6 +27,7 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const animFrameRef = useRef(null);
+  const resizeFrameRef = useRef(null);
   const [currentZoom, setCurrentZoom] = useState(17.2);
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark');
 
@@ -57,6 +58,22 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
 
     mapRef.current = map;
 
+    // The map can mount while its responsive parent is still sizing (for
+    // example, when the shell finishes its mobile layout). Mapbox only tracks
+    // window resizes by default, so observe the actual container as well.
+    const resizeObserver = new ResizeObserver(() => {
+      if (resizeFrameRef.current) cancelAnimationFrame(resizeFrameRef.current);
+      resizeFrameRef.current = requestAnimationFrame(() => {
+        resizeFrameRef.current = null;
+        if (containerRef.current?.isConnected) map.resize();
+      });
+    });
+    resizeObserver.observe(containerRef.current);
+    resizeFrameRef.current = requestAnimationFrame(() => {
+      resizeFrameRef.current = null;
+      if (containerRef.current?.isConnected) map.resize();
+    });
+
     // Scale child elements (.pin-inner), NEVER the root marker element (which Mapbox transforms)
     const updateMarkerScales = () => {
       const zoom = map.getZoom();
@@ -74,6 +91,7 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
     map.on('zoom', updateMarkerScales);
 
     map.on('load', () => {
+      map.resize();
       // ── CAMPUS BASE LABEL ──────────────────────────────────────────────────
       const labelEl = document.createElement('div');
       labelEl.innerHTML = `
@@ -341,6 +359,8 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-right');
 
     return () => {
+      resizeObserver.disconnect();
+      if (resizeFrameRef.current) cancelAnimationFrame(resizeFrameRef.current);
       markersRef.current.forEach(item => item.marker?.remove());
       markersRef.current = [];
       if (animFrameRef.current) clearTimeout(animFrameRef.current);
@@ -388,7 +408,7 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
   };
 
   return (
-    <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(52,211,153,0.18)', height }}>
+    <div style={{ position: 'relative', width: '100%', minWidth: 0, boxSizing: 'border-box', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(52,211,153,0.18)', height }}>
       {/* Top Campus Coordinates & Reset View Badge */}
       <div style={{
         position: 'absolute', top: 12, left: 12, zIndex: 10,
@@ -419,7 +439,7 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
         </button>
       </div>
 
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      <div ref={containerRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
     </div>
   );
 }
