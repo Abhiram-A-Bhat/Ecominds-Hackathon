@@ -1,85 +1,51 @@
 @echo off
-setlocal enabledelayedexpansion
-title Ecominds — Launcher
+setlocal
+title Guardian Campus - Launcher
+cd /d "%~dp0"
+set "ROOT=%~dp0"
+set "VENV_PY=%ROOT%venv\Scripts\python.exe"
 
-echo ===============================================================================
-echo                ECOMINDS (RNSIT) — SYSTEM LAUNCHER
-echo ===============================================================================
+echo ================================================================
+echo                  GUARDIAN CAMPUS - LAUNCHER
+echo ================================================================
 echo.
 
-:: -----------------------------------------------------------------------------
-:: Step 1: Pre-flight check
-:: -----------------------------------------------------------------------------
-if not exist "node_modules" (
-    echo [!] WARNING: "node_modules" directory not found!
-    echo [*] Running automated setup first...
-    echo.
-    call setup.bat
-    if %errorlevel% neq 0 (
-        echo [!] Setup encountered an error. Aborting launch.
-        pause
-        exit /b 1
-    )
+if not exist "%ROOT%node_modules\vite\bin\vite.js" (
+    echo Dependencies are missing. Running setup.bat first...
+    call "%ROOT%setup.bat"
+    if errorlevel 1 exit /b 1
+)
+if not exist "%VENV_PY%" (
+    echo Python backend environment is missing. Running setup.bat first...
+    call "%ROOT%setup.bat"
+    if errorlevel 1 exit /b 1
 )
 
-if not exist "venv\Scripts\activate.bat" (
-    echo [!] Python virtual environment not found. Running setup.bat...
-    call setup.bat
+where node >nul 2>nul
+if errorlevel 1 (
+    echo [ERROR] Node.js is not available in PATH. Install Node.js, reopen this window, and try again.
+    pause
+    exit /b 1
+)
+if not exist "%ROOT%.env" if exist "%ROOT%.env.example" (
+    copy /y "%ROOT%.env.example" "%ROOT%.env" >nul
+    echo Created .env from .env.example. Optional API keys can be added there.
 )
 
-:: -----------------------------------------------------------------------------
-:: Step 2: Start Backend (FastAPI + YOLO + Hermes) in Dedicated Window
-:: -----------------------------------------------------------------------------
-echo [*] Launching Python FastAPI Backend on http://127.0.0.1:8000 ...
-start "Ecominds AI Backend (FastAPI + YOLO + Hermes)" cmd /k "title Ecominds Backend (Port 8000) && call venv\Scripts\activate.bat && python backend/server.py"
+echo Starting the API and frontend in separate windows...
+start "Guardian Campus API - Port 8000" /D "%ROOT%" cmd /k ""%VENV_PY%" backend\server.py"
+start "Guardian Campus Web - Port 5173" /D "%ROOT%" cmd /k "npm run dev -- --host 127.0.0.1 --port 5173"
 
-:: Brief wait for backend port to initialize
-timeout /t 2 /nobreak >nul
+echo Waiting for the frontend to initialize...
+timeout /t 4 /nobreak >nul
+start "" "http://localhost:5173/"
 
-:: -----------------------------------------------------------------------------
-:: Step 3: Start Frontend (Vite Dev Server) in Dedicated Window
-:: -----------------------------------------------------------------------------
-echo [*] Launching Vite Frontend on http://localhost:5173 ...
-start "Ecominds Web Interface (React 19 + Vite)" cmd /k "title Ecominds Frontend (Port 5173) && npm run dev -- --host --port 5173"
-
-:: Brief wait for Vite server to come online
-timeout /t 3 /nobreak >nul
-
-:: -----------------------------------------------------------------------------
-:: Step 4: Open Browser Automatically
-:: -----------------------------------------------------------------------------
-echo [*] Opening default web browser to Ecominds...
-start http://localhost:5173/
-
-:: -----------------------------------------------------------------------------
-:: Step 5: Master Operations Console
-:: -----------------------------------------------------------------------------
-cls
-echo ===============================================================================
-echo                ECOMINDS (RNSIT) — ACTIVE RUNNING
-echo ===============================================================================
 echo.
-echo  [+] Web Interface:    http://localhost:5173/
-echo  [+] AI Engine API:    http://127.0.0.1:8000/
-echo  [+] Hermes Status:    http://127.0.0.1:8000/api/hermes/status
-echo  [+] Health Endpoint:  http://127.0.0.1:8000/health
+echo Guardian Campus is starting.
+echo Frontend: http://localhost:5173/
+echo API health: http://127.0.0.1:8000/health
+echo Keep both server windows open while using the app.
+echo Close the API and Web windows to stop the project.
 echo.
-echo -------------------------------------------------------------------------------
-echo  DEMO ACCOUNTS READY TO USE:
-echo -------------------------------------------------------------------------------
-echo  * STUDENT PORTAL:     Login as student (e.g. Abhiram / 1RN23IS005)
-echo                        Tools: Pass-The-Torch, Cafeteria Surplus, Tree Care,
-echo                               Resource Bounties, EcoCredits Rewards.
-echo.
-echo  * ADMIN CONSOLE:      Login as admin (Faculty Administrator)
-echo                        Tools: Verification Desk, AI Scanner Intake,
-echo                               E-Waste Salvage, Ground Ops Routing, NAAC Audit.
-echo -------------------------------------------------------------------------------
-echo.
-echo  NOTE:
-echo   - Both the Frontend and Backend are running in their own terminal windows.
-echo   - To stop the entire application, close those terminal windows or press Ctrl+C.
-echo.
-echo ===============================================================================
-echo  Press any key in this window to close this launcher menu...
-pause >nul
+pause
+exit /b 0
