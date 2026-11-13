@@ -179,8 +179,8 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
       </div>
 
       {/* User + collapse */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexDirection: collapsed ? 'column' : 'row' }}>
-        <div role="group" aria-label="Signed-in account" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }} title={currentUser?.name}>
+      <div className={`sb-footer ${collapsed ? 'is-collapsed' : ''}`} style={{ borderTop: '1px solid var(--border)', padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexDirection: collapsed ? 'column' : 'row' }}>
+        <div className="sb-account" role="group" aria-label="Signed-in account" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }} title={currentUser?.name}>
           <span style={{
             width: 36, height: 36, borderRadius: 12, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 18,
             background: roleMeta?.tint,

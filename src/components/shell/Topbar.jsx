@@ -111,7 +111,7 @@ function UserMenu() {
   if (!currentUser) return null;
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="topbar-profile" style={{ position: 'relative' }}>
       <button
         type="button"
         className="tb-btn"

@@ -987,3 +987,33 @@ html, body { background: var(--bg); color: var(--text); }
 }
 .sidebar .spotlight:hover svg circle:nth-child(2),
 .sidebar .spotlight:focus-visible svg circle:nth-child(2) { stroke: var(--pulse-status) !important; }
+
+/* Keep the sidebar account mark centered inside the compact rail. */
+.sb-footer { box-sizing: border-box; width: 100%; flex: 0 0 auto; }
+.sidebar.collapsed .sb-footer {
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 !important;
+}
+.sidebar.collapsed .sb-account {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+  flex: 0 0 36px !important;
+  justify-content: center;
+  overflow: hidden;
+}
+.sidebar.collapsed .sb-account > .sb-label { display: none; }
+.sidebar.collapsed .sb-footer > .tb-btn { flex: 0 0 32px; }
+
+/* The toolbar is intentionally compact when the expanded rail narrows the page. */
+@media (min-width: 1024px) and (max-width: 1400px) {
+  .app-shell:not(.sb-collapsed) .topbar-profile { display: none; }
+  .topbar .hide-md { display: none !important; }
+  .topbar .tb-search { min-width: 0; }
+  .topbar .tb-search-text,
+  .topbar .tb-search kbd { display: none; }
+}
+@media (max-width: 640px) {
+  .topbar-profile { display: none; }
+}
