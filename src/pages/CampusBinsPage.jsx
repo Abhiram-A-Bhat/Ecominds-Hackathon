@@ -59,8 +59,8 @@ export const CampusBinsPage = ({ bins, onEmptyBin, liveReading = null, onLiveBin
   return (
     <div className="space-y-6">
       {/* Friendly Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400">
             <Link to="/" className="hover:underline">Campus Hub</Link>
             <span>/</span>
@@ -77,7 +77,7 @@ export const CampusBinsPage = ({ bins, onEmptyBin, liveReading = null, onLiveBin
         </div>
 
         {/* Filter Pills */}
-        {dataMode === 'mock' && <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {dataMode === 'mock' && <div className="flex w-full flex-wrap items-center gap-2 pb-1 lg:w-auto lg:flex-nowrap lg:justify-end">
           {['ALL', 'CRITICAL', 'WARNING', 'EWASTE'].map(f => (
             <button
               key={f}

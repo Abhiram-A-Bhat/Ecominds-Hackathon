@@ -426,6 +426,15 @@ code, pre, .font-mono, kbd { font-family: 'JetBrains Mono', monospace; }
 .route-view > * > *:nth-child(6) { animation-delay: .29s; }
 .route-view > * > *:nth-child(n+7) { animation-delay: .34s; }
 
+/* Compact screens prioritise immediate content over a stagger that can look like
+   an empty page while the route is settling. */
+@media (max-width: 767px) {
+  .route-view,
+  .route-view > * > *:not(.reveal-up):not(.reveal-scale) {
+    animation: none;
+  }
+}
+
 /* auto scroll-reveal (useAutoReveal) */
 .auto-reveal { opacity: 0; translate: 0 26px; transition: opacity .7s var(--ease-out), translate .7s var(--ease-out); }
 .auto-reveal.in { opacity: 1; translate: 0 0; }
@@ -1064,9 +1073,14 @@ html, body { background: var(--bg); color: var(--text); }
   --shadow-button: 0 5px 0 #c2d2c3, 0 8px 14px rgba(60,95,69,.18), inset 0 1px 0 #fff;
   --shadow-button-inset: inset 2px 2px 5px rgba(75,104,80,.18), inset -1px -1px 3px #fff;
 }
-:root[data-role] { --role-grad: var(--role); }
-:root[data-role][data-theme="dark"] { --role: #248c52; --role-hi: #8ce3ad; --role-ink: #06140b; --role-soft: rgba(36,140,82,.15); --role-line: rgba(104,207,145,.36); }
-:root[data-role][data-theme="light"] { --role: #187847; --role-hi: #12623c; --role-ink: #fff; --role-soft: rgba(24,120,71,.1); --role-line: rgba(24,120,71,.28); }
+/* Theme tokens must retain the selected role's identity.  The earlier generic
+   selector unintentionally recoloured staff and admin experiences green. */
+:root[data-role="STUDENT"][data-theme="dark"] { --role: #34d399; --role-hi: #a7f3d0; --role-ink: #022c1c; --role-grad: linear-gradient(135deg, #d9f99d 0%, #4ade80 38%, #10b981 100%); --role-soft: rgba(52,211,153,.12); --role-line: rgba(52,211,153,.32); }
+:root[data-role="STUDENT"][data-theme="light"] { --role: #187847; --role-hi: #12623c; --role-ink: #fff; --role-grad: linear-gradient(135deg, #d9f99d 0%, #4ade80 38%, #10b981 100%); --role-soft: rgba(24,120,71,.1); --role-line: rgba(24,120,71,.28); }
+:root[data-role="STAFF"][data-theme="dark"] { --role: #fb923c; --role-hi: #fed7aa; --role-ink: #2b1400; --role-grad: linear-gradient(135deg, #fef08a 0%, #fbbf24 35%, #f97316 100%); --role-soft: rgba(251,146,60,.12); --role-line: rgba(251,146,60,.36); }
+:root[data-role="STAFF"][data-theme="light"] { --role: #c2410c; --role-hi: #9a3412; --role-ink: #fff; --role-grad: linear-gradient(135deg, #fde68a 0%, #f59e0b 35%, #ea580c 100%); --role-soft: rgba(194,65,12,.1); --role-line: rgba(194,65,12,.28); }
+:root[data-role="ADMIN"][data-theme="dark"] { --role: #c084fc; --role-hi: #f0abfc; --role-ink: #fff; --role-grad: linear-gradient(135deg, #f0abfc 0%, #a855f7 45%, #6d28d9 100%); --role-soft: rgba(192,132,252,.12); --role-line: rgba(192,132,252,.36); }
+:root[data-role="ADMIN"][data-theme="light"] { --role: #7e22ce; --role-hi: #6b21a8; --role-ink: #fff; --role-grad: linear-gradient(135deg, #e9d5ff 0%, #a855f7 45%, #6d28d9 100%); --role-soft: rgba(126,34,206,.1); --role-line: rgba(126,34,206,.28); }
 
 html, body { font-family: var(--font-ui); }
 code, pre, kbd { font-family: var(--font-mono); }
