@@ -30,36 +30,25 @@ The backend reads its cloud-relay URL and private token from the ignored local
 deployed page reads only the public, read-only cloud feed. It refreshes every
 two seconds; the ESP32 sends a new sample every ten seconds.
 
-## 2. Configure up to three Wi-Fi networks
-
-The ESP32 scans for the saved networks at each wake, tries the strongest one
-first, and moves to the next saved network if it cannot join. Because this
-sketch uses deep sleep, it scans again for every new reading and will switch to
-another available saved network on the next wake.
+## 2. Configure the Motorola Edge 40 hotspot
 
 1. In the Arduino sketch folder, copy `wifi_credentials.h.example` and name the
    copy `wifi_credentials.h`.
-2. Open `wifi_credentials.h` and enter the exact SSID and password for up to
-   three **2.4 GHz** networks. Leave an unused entry blank, for example:
+2. Open `wifi_credentials.h` and enter the hotspot password for the **2.4 GHz**
+   `motorola edge 40_9307` Wi-Fi network:
 
    ```cpp
-   {"Campus-WiFi", "campus-password"},
-   {"Phone-Hotspot", "hotspot-password"},
-   {"", ""}
+   {"motorola edge 40_9307", "your-hotspot-password"}
    ```
 
 3. Keep `wifi_credentials.h` beside `esp32_ultrasonic_bin.ino`. It is excluded
    from Git because it contains Wi-Fi passwords. The ESP32 cannot connect to a
    5 GHz-only network and this sketch does not create a hotspot.
 
-For readings to reach the laptop, the laptop must be reachable from whichever
-network the ESP32 selects. If the laptop uses different local IP addresses on
-the three networks, update `API_URL` to an address/hostname that resolves to
-the laptop on each network, or use a single shared network/hotspot for both.
-Automatic Wi-Fi selection only chooses the ESP32's access point; it cannot
-make a private laptop backend reachable across unrelated networks. The cloud
-relay also requires the laptop backend to remain online and connected to the
-internet.
+For readings to reach the laptop, connect the laptop to this same hotspot and
+set `API_URL` to the laptop's IP address on that hotspot. The hotspot must be
+enabled while the ESP32 is sending readings. The cloud relay also requires the
+laptop backend to remain online and connected to the internet.
 
 ## 3. Ensure the laptop and ESP32 can reach each other
 

@@ -3,7 +3,7 @@
 #include "esp_sleep.h"
 #include "wifi_credentials.h"
 
-// The ESP32 selects the strongest saved 2.4 GHz network it can join.
+// Connect only to the Motorola Edge 40 2.4 GHz hotspot in wifi_credentials.h.
 
 // Laptop's Wi-Fi IPv4 address, not localhost. Update if the laptop's address changes.
 const char* API_URL = "http://192.168.1.43:8000/api/bin-readings";
@@ -95,7 +95,7 @@ bool connectToSavedNetwork(int index, int rssi) {
   Serial.println();
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.printf("Could not join %s; trying another saved network.\n", ssid);
+    Serial.printf("Could not join %s; will retry after the next wake.\n", ssid);
     WiFi.disconnect(false, false);
     return false;
   }
@@ -107,46 +107,11 @@ bool connectToSavedNetwork(int index, int rssi) {
 bool connectWiFi() {
   if (WiFi.status() == WL_CONNECTED) return true;
   WiFi.mode(WIFI_STA);
-  const int networkCount = static_cast<int>(WIFI_NETWORK_COUNT);
-  int signalStrength[WIFI_NETWORK_COUNT];
-  for (int i = 0; i < networkCount; i++) signalStrength[i] = -1000;
-
-  Serial.println("Scanning for saved Wi-Fi networks...");
-  const int visibleCount = WiFi.scanNetworks();
-  if (visibleCount >= 0) {
-    for (int visible = 0; visible < visibleCount; visible++) {
-      const String visibleSsid = WiFi.SSID(visible);
-      for (int saved = 0; saved < networkCount; saved++) {
-        if (WIFI_NETWORKS[saved].ssid[0] != '\0' && visibleSsid == WIFI_NETWORKS[saved].ssid) {
-          signalStrength[saved] = max(signalStrength[saved], WiFi.RSSI(visible));
-        }
-      }
-    }
-    WiFi.scanDelete();
-
-    // Try networks in strongest-signal-first order. If authentication fails,
-    // continue to the next visible saved network.
-    for (int attempt = 0; attempt < networkCount; attempt++) {
-      int best = -1;
-      for (int i = 0; i < networkCount; i++) {
-        if (signalStrength[i] > -1000 && (best < 0 || signalStrength[i] > signalStrength[best])) best = i;
-      }
-      if (best < 0) break;
-      const int rssi = signalStrength[best];
-      signalStrength[best] = -1000;
-      if (connectToSavedNetwork(best, rssi)) return true;
-    }
-    Serial.println("None of the saved Wi-Fi networks was available or accepted the password.");
+  if (WIFI_NETWORK_COUNT == 0 || WIFI_NETWORKS[0].ssid[0] == '\0') {
+    Serial.println("No Motorola hotspot credentials configured. Check wifi_credentials.h.");
     return false;
   }
-
-  // If the scan itself fails, give each configured network one connection attempt.
-  Serial.printf("Wi-Fi scan failed (%d); trying saved networks in order.\n", visibleCount);
-  for (int i = 0; i < networkCount; i++) {
-    if (WIFI_NETWORKS[i].ssid[0] != '\0' && connectToSavedNetwork(i, -1000)) return true;
-  }
-  Serial.println("Could not connect to any configured Wi-Fi network.");
-  return false;
+  return connectToSavedNetwork(0, WiFi.RSSI());
 }
 
 void sendReading(float distanceCm, float fillPercent) {
