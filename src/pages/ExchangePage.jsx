@@ -32,6 +32,13 @@ const POINTS_BY_CATEGORY = {
   OTHER: 10,
 };
 
+const CLAIM_COST_BY_CATEGORY = {
+  UNIFORM: 25, NOTES: 10, TEXTBOOK: 20, CALCULATOR: 25,
+  ELECTRONICS: 30, LAB_GEAR: 25, DRAWING: 20, CLOTHING: 15,
+};
+
+const claimCost = item => CLAIM_COST_BY_CATEGORY[item?.category] ?? 15;
+
 // In-memory persistent list of shared senior hand-me-downs & exchange items
 let globalDonations = [
   {
@@ -205,6 +212,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
   // Claim modal state
   const [claimingItem, setClaimingItem] = useState(null);
   const [claimNote, setClaimNote] = useState('');
+  const [claimError, setClaimError] = useState('');
   const [qrItemId, setQrItemId] = useState(null);
 
   // Filter items
@@ -285,6 +293,11 @@ export function ExchangePage({ userCredits, setUserCredits }) {
   const handleClaim = (item) => {
     const liveItem = items.find(i => i.id === item.id);
     if (!liveItem || liveItem.status !== 'AVAILABLE' || liveItem.donorId === currentUser?.id || claimedIds.has(item.id)) return;
+    const cost = claimCost(liveItem);
+    if (userCredits < cost) {
+      setClaimError(`You need ${cost - userCredits} more EcoCredits to claim this item.`);
+      return;
+    }
     const nextClaimed = [...new Set([...claimedIds, item.id])];
     localStorage.setItem(receivedKey, JSON.stringify(nextClaimed));
     setClaimedIds(new Set(nextClaimed));
@@ -304,10 +317,8 @@ export function ExchangePage({ userCredits, setUserCredits }) {
     setItems(updated);
     setClaimingItem(null);
 
-    // Reward junior +10 EcoCredits and log in user history
-    if (setUserCredits) {
-      setUserCredits(prev => prev + 10);
-    }
+    // Claiming a shared item spends the published category cost.
+    setUserCredits?.(prev => prev - cost);
 
     if (addClaimedItem) {
       addClaimedItem(item);
@@ -315,18 +326,18 @@ export function ExchangePage({ userCredits, setUserCredits }) {
 
     if (addContribution) {
       addContribution({
-        action: `Claimed Free Academic Gear: ${item.title}`,
-        points: 10,
+        action: `Pass the Torch claim: ${item.title}`,
+        points: -cost,
         type: 'HANDMEDOWN',
         status: 'APPROVED',
       });
     }
 
     triggerEcoCelebration({
-      title: '🎉 Item Reserved for Free Pickup!',
-      message: `You reserved "${item.title}". Collect it from ECE Lab 104 / Student Council Desk with your college ID!`,
-      points: 10,
-      badge: 'Free Claim Verified',
+      title: '🎉 Item Reserved for Pickup!',
+      message: `You spent ${cost} EcoCredits to reserve "${item.title}". Collect it from ECE Lab 104 / Student Council Desk with your college ID!`,
+      points: -cost,
+      badge: `−${cost} EcoCredits`,
     });
   };
 
@@ -390,9 +401,9 @@ export function ExchangePage({ userCredits, setUserCredits }) {
             🎓
           </div>
           <div>
-            <h4 className="text-xs font-bold text-amber-300">3. Juniors Claim Free</h4>
+            <h4 className="text-xs font-bold text-amber-300">3. Juniors Redeem with Points</h4>
             <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-              100% free for juniors in need. Reserve online and collect with your college ID card.
+              Spend EcoCredits to reserve an item and collect it with your college ID card.
             </p>
           </div>
         </div>
@@ -678,7 +689,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
                         onClick={() => setClaimingItem(item)}
                         className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl shadow-md transition"
                       >
-                        Claim for Free →
+                        Claim · {claimCost(item)} pts →
                       </button>
                     </div>
                     <div className="flex flex-col items-start gap-1">
@@ -788,7 +799,7 @@ export function ExchangePage({ userCredits, setUserCredits }) {
           <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Free Academic Claim</span>
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Pass the Torch · {claimCost(claimingItem)} EcoCredits</span>
                 <h3 className="text-base font-black text-white mt-0.5">{claimingItem.title}</h3>
               </div>
               <button onClick={() => setClaimingItem(null)} className="text-slate-400 hover:text-white">✕</button>
@@ -801,21 +812,23 @@ export function ExchangePage({ userCredits, setUserCredits }) {
             </div>
 
             <p className="text-xs text-slate-400">
-              This item will be reserved under your USN (<strong>{currentUser?.usn || 'Your Account'}</strong>). You can collect it free of cost by presenting your college ID card!
+              Your balance: <strong>{userCredits} EcoCredits</strong>. This costs <strong>{claimCost(claimingItem)} EcoCredits</strong>. The item will be reserved under your USN (<strong>{currentUser?.usn || 'Your Account'}</strong>) for collection with your college ID.
             </p>
+            {claimError && <p role="alert" className="text-xs font-bold text-rose-400">{claimError}</p>}
 
             <div className="flex justify-end gap-2 pt-2">
               <button
-                onClick={() => setClaimingItem(null)}
+                onClick={() => { setClaimError(''); setClaimingItem(null); }}
                 className="px-4 py-2 text-xs text-slate-400 hover:text-white"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleClaim(claimingItem)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition"
+                disabled={userCredits < claimCost(claimingItem)}
+                className="bg-emerald-600 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 text-white font-bold text-xs px-4 py-2 rounded-xl transition"
               >
-                Confirm Free Reservation
+                Confirm · Spend {claimCost(claimingItem)} pts
               </button>
             </div>
           </div>

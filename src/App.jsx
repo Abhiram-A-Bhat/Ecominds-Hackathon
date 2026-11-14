@@ -223,7 +223,6 @@ function AppContent() {
   };
 
   const enqueueStaffBinAlert = useCallback((bin, source = 'mock') => {
-    if (!['STAFF', 'ADMIN'].includes(role)) return;
     const alert = {
       key: `${source}:${bin.id || bin.binId}:${bin.measuredAt || 'threshold'}`,
       binId: bin.id || bin.binId,
@@ -233,13 +232,13 @@ function AppContent() {
       source,
     };
     setStaffBinAlerts(current => current.some(item => item.binId === alert.binId) ? current : [...current, alert]);
-  }, [role]);
+  }, []);
 
   const handleLiveBinReading = useCallback((reading) => {
     const level = Number(reading?.fillPercent);
     if (!reading?.binId || !Number.isFinite(level) || level < 0 || level > 100) return;
     if (level >= 80 && !alertedLiveBinIdsRef.current.has(reading.binId)) {
-      if (['STAFF', 'ADMIN'].includes(role)) alertedLiveBinIdsRef.current.add(reading.binId);
+      alertedLiveBinIdsRef.current.add(reading.binId);
       enqueueStaffBinAlert({ ...reading, fillPercent: level }, 'live');
       const existing = guardianTaskService.getTasks().some(task => task.category === 'BIN_OVERFLOW' && task.targetId === reading.binId && task.status !== 'COMPLETED');
       if (!existing) guardianTaskService.createTask({
@@ -270,10 +269,10 @@ function AppContent() {
   useEffect(() => {
     bins.forEach(bin => {
       const wasAlerted = alertedMockBinIdsRef.current.has(bin.id);
-      if (['STAFF', 'ADMIN'].includes(role) && bin.fillLevel >= 80 && !wasAlerted) {
+      if (bin.fillLevel >= 80 && !wasAlerted) {
         alertedMockBinIdsRef.current.add(bin.id);
         enqueueStaffBinAlert(bin, 'mock');
-        if (['STAFF', 'ADMIN'].includes(role) && 'Notification' in window && Notification.permission === 'granted') {
+        if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('🚨 Ecominds Alert: Bin Surge Detected', {
             body: `${bin.name} (${bin.block}) has reached ${bin.fillLevel}% — immediate collection needed.`,
             icon: '/favicon.svg',
@@ -283,7 +282,7 @@ function AppContent() {
       }
       if (bin.fillLevel < 80) alertedMockBinIdsRef.current.delete(bin.id);
     });
-  }, [bins, role, enqueueStaffBinAlert]);
+  }, [bins, enqueueStaffBinAlert]);
 
   // Global Ctrl+K
   useEffect(() => {
