@@ -247,7 +247,7 @@ export function ActionMeshCenter({
                   style={{
                     background: isResolved
                       ? 'rgba(52,211,153,0.04)'
-                      : isCrit ? 'rgba(239,68,68,0.08)' : 'rgba(10,25,18,0.7)',
+                      : isCrit ? 'rgba(239,68,68,0.08)' : 'var(--surface)',
                     border: isResolved
                       ? '1px solid rgba(52,211,153,0.18)'
                       : isCrit ? '1px solid rgba(239,68,68,0.35)' : '1px solid rgba(52,211,153,0.2)',
@@ -259,7 +259,7 @@ export function ActionMeshCenter({
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{
                         fontSize: 11, fontFamily: 'monospace', fontWeight: 900,
-                        background: '#030d08', color: '#34d399', padding: '2px 8px',
+                        background: 'var(--surface-solid)', color: 'var(--role)', padding: '2px 8px',
                         borderRadius: 6, border: '1px solid rgba(52,211,153,0.2)'
                       }}>
                         {t.id}

@@ -8,7 +8,7 @@ export const TraceabilityLedgerPage = () => {
       txHash: "0x89f4b27c19ae8204",
       item: "Lithium-Ion 18650 Battery Batch #42 (12 Cells)",
       dropLocation: "ECE Robotics Lab Smart Locker",
-      studentId: "1RN23EC048 (Divyashree S)",
+      studentId: "1RN23EC048 (Draupadi)",
       timestamp: "Today, 11:24 AM",
       lifecycleStage: "CPCB Certified Recycler Handover",
       recyclerName: "E-Terra Global Recyclers (Govt Reg: KSPCB/EW/2022/94)",
@@ -20,7 +20,7 @@ export const TraceabilityLedgerPage = () => {
       txHash: "0x42c8d109f08a4112",
       item: "Mixed Microcontroller Boards (Arduino & ESP32)",
       dropLocation: "CSE 2nd Floor Smart Locker",
-      studentId: "1RN22CS110 (Purnima S)",
+      studentId: "1RN22CS110 (Parvati)",
       timestamp: "Yesterday, 04:15 PM",
       lifecycleStage: "Academic Lab Upcycling Re-Issue",
       recyclerName: "RNSIT Component Salvage Club Desk",
@@ -32,7 +32,7 @@ export const TraceabilityLedgerPage = () => {
       txHash: "0x31a0e98214bc7754",
       item: "Damaged SMPS Power Supply & Transformers",
       dropLocation: "Mechanical Workshop Yard Locker",
-      studentId: "1RN21ME074 (Kavitha S)",
+      studentId: "1RN21ME074 (Vyasa)",
       timestamp: "12 Oct 2026, 02:40 PM",
       lifecycleStage: "Smelting & Heavy Metal Extraction",
       recyclerName: "Bangalore Green Metallics Ltd.",
@@ -97,7 +97,7 @@ export const TraceabilityLedgerPage = () => {
             E-Waste Chain-of-Custody Audit Trail
           </h1>
           <p className="text-xs text-slate-400">
-            Endpoint: <code className="text-teal-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/traceability</code> • Tamper-evident audit log ensuring zero illegal dumping or toxic soil leakage.
+            Follow each e-waste handoff with a tamper-evident record from collection to recycler.
           </p>
         </div>
 

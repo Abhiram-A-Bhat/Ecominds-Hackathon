@@ -32,7 +32,7 @@ const MODULE_COPY = {
     '/adopt': { desc: 'Adopt one campus plant. Water it on time for +10 a cycle; skip a cycle and lose 15. The Overseer is watching.', badge: 'DAILY' },
     '/overseer': { desc: 'One student, fully anonymous, audits everyone’s plant care with photo evidence. Take the seat if it’s open.', badge: 'SECRET' },
     '/exchange': { desc: 'Seniors pass down notes, calculators, drafters and lab coats. Free for juniors; donors earn credits.', badge: 'FREE GEAR' },
-    '/mess': { desc: 'Instant surplus-meal broadcasts after service, plus clean-plate logs that earn verified credits.', badge: 'SURPLUS' },
+    '/mess': { desc: 'Reserve a leftover cafeteria meal with EcoCredits or log a clean plate.', badge: 'SURPLUS' },
     '/bounties': { desc: 'Empty room with the projector on? Leaking tap? Snap it, alert staff, earn +35 when fixed.', badge: '+35 PTS' },
     '/trees': { desc: 'Every geo-tagged tree on the GIS map, with health and CO₂ sequestration.' },
     '/bins': { desc: 'Find the nearest smart bin for dry, wet and paper waste — with live fill levels.', badge: 'MAP' },
@@ -48,7 +48,7 @@ const MODULE_COPY = {
     '/admin-verify': { desc: 'Approve drop-offs and photo evidence, then credit official EcoCredits.', badge: 'QUEUE' },
     '/scanner': { desc: 'Lab 104 intake: YOLO classifies material purity and allots verified credits to a USN.', badge: 'KIOSK' },
     '/ewaste': { desc: 'Harvest capacitors, MCUs and sensors for labs; log recoverable metals.' },
-    '/mess': { desc: 'Broadcast leftover portions the moment service ends; students come and collect.' },
+    '/mess': { desc: 'Broadcast safe leftover portions, pickup details and the EcoCredits price.' },
     '/trees': { desc: 'Campus tree map with health flags for the grounds team.' },
   },
   ADMIN: {
@@ -191,16 +191,11 @@ function ModuleTile({ item, copy, index, featured }) {
           <span className="mt-icon" style={{ width: 44, height: 44, borderRadius: 13, display: 'grid', placeItems: 'center', color: a, background: `${a}1c`, border: `1px solid ${a}38` }}>
             <Icon size={20} strokeWidth={2.2} />
           </span>
-          {(copy?.badge || item.badge) && (
-            <span style={{ fontSize: 9.5, fontFamily: 'JetBrains Mono, monospace', fontWeight: 800, letterSpacing: '.06em', color: a, background: `${a}14`, border: `1px solid ${a}33`, padding: '3px 8px', borderRadius: 99 }}>
-              {copy?.badge || item.badge}
-            </span>
-          )}
         </div>
         <div style={{ fontSize: featured ? 19 : 15.5, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.015em', marginBottom: 6 }}>{item.title}</div>
         <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, flex: 1, maxWidth: featured ? 460 : undefined }}>{copy?.desc || item.desc}</div>
         <div className="mt-cta" style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 16, fontSize: 12.5, fontWeight: 800, color: a }}>
-          Open <ArrowRight size={14} className="mt-arrow" />
+          Explore {item.title} <ArrowRight size={14} className="mt-arrow" />
         </div>
       </Link>
     </div>
@@ -350,7 +345,7 @@ export const HomePage = ({ bins, userCredits, salvagedItems, trees, surplusAlert
               { code: 'SDG 13', color: '#60a5fa', title: 'Climate action' },
               { code: 'LiFE', color: '#2dd4bf', title: 'Pro-Planet People' },
             ].map((s, i) => (
-              <div key={s.code} className="spotlight" style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(2,10,6,.45)', border: '1px solid var(--border)', '--spot': `${s.color}22`, animation: `staggerIn .5s var(--ease-out) ${i * 0.06}s backwards` }}>
+              <div key={s.code} className="spotlight" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)', '--spot': `${s.color}22`, animation: `staggerIn .5s var(--ease-out) ${i * 0.06}s backwards` }}>
                 <div style={{ fontSize: 11, fontFamily: 'JetBrains Mono, monospace', fontWeight: 800, color: s.color }}>{s.code}</div>
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>{s.title}</div>
               </div>

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { IconAlertTriangle, IconCheckCircle, IconZap } from '../components/Icons';
+import { IconAlertTriangle, IconCheckCircle } from '../components/Icons';
 import { triggerEcoCelebration } from '../utils/ecoCelebration';
 import { Link } from '../router/Router';
 import { useAuth } from '../contexts/AuthContext';
 
-export const BountiesPage = ({ userCredits, setUserCredits }) => {
+export const BountiesPage = ({ setUserCredits }) => {
   const { currentUser, addContribution } = useAuth();
   const resolvedKey = `ecominds_resolved_bounties_${currentUser?.id || 'guest'}`;
   const [bounties, setBounties] = useState([
@@ -12,7 +12,7 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
       id: "BNT-101",
       title: "Projector & 4 High-Power Ceiling Fans Running in Empty Seminar Hall 2",
       location: "Admin Block, 3rd Floor",
-      reporter: "Nayana C P",
+      reporter: "Gargi",
       reportedAt: "25 mins ago",
       energySavedEst: "~3.2 kWh / hour",
       bountyPts: 30,
@@ -23,18 +23,19 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
       id: "BNT-102",
       title: "Continuously Leaking Restroom Flush Valve & Tap Drip",
       location: "CSE Block, 1st Floor Boys Washroom",
-      reporter: "Sowmyashree S",
+      reporter: "Subhadra",
       reportedAt: "1 hour ago",
       energySavedEst: "~15 Liters / hour saved",
       bountyPts: 35,
       status: "DISPATCHED",
+      staffOnly: true,
       actionTaken: "Plumbing maintenance ticket #829 assigned."
     },
     {
       id: "BNT-103",
       title: "Lawn Sprinkler Spraying Concrete Path instead of Turf",
       location: "Main Quadrangle North Garden",
-      reporter: "Harshitha P",
+      reporter: "Lakshmi",
       reportedAt: "3 hours ago",
       energySavedEst: "~40 Liters water redirected",
       bountyPts: 25,
@@ -59,17 +60,22 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
     let resolvedIds = [];
     try { resolvedIds = JSON.parse(localStorage.getItem(resolvedKey) || '[]'); } catch { /* ignore malformed cache */ }
     if (!targetBounty || targetBounty.status !== 'DISPATCHED' || targetBounty.reporterId === currentUser?.id || resolvedIds.includes(bountyId)) return;
+    if (targetBounty.staffOnly && currentUser?.role === 'STUDENT') return;
     localStorage.setItem(resolvedKey, JSON.stringify([...resolvedIds, bountyId]));
     setBounties(prev => prev.map(b => {
       if (b.id === bountyId) {
         return {
           ...b,
           status: 'RESOLVED',
-          actionTaken: 'Verified & physically resolved on-site by student responder.'
+          actionTaken: targetBounty.staffOnly ? 'Campus staff completed and verified the maintenance ticket.' : 'Verified & physically resolved on-site by student responder.'
         };
       }
       return b;
     }));
+    if (targetBounty.staffOnly) {
+      triggerEcoCelebration({ title: 'Staff maintenance task completed', message: `${targetBounty.title} was marked resolved by campus staff.`, points: 0 });
+      return;
+    }
     const verifiedPoints = Math.min(35, Math.max(0, Number(pts) || 0));
     setUserCredits(c => c + verifiedPoints);
     if (addContribution) {
@@ -102,6 +108,7 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
       energySavedEst: "Calculating impact...",
       bountyPts: 25,
       status: "DISPATCHED",
+      staffOnly: /\b(restroom|bathroom|washroom|toilet|urinal|lavatory)\b/i.test(`${newBounty.title} ${newBounty.location}`),
       actionTaken: "Facility maintenance automated ticket generated.",
       ...(photoPreview ? { photo: photoPreview } : {}),
     };
@@ -266,7 +273,7 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                     : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                 }`}>
-                  {bnt.status === 'RESOLVED' ? '✓ Resolved' : '⏳ In Progress'}
+                  {bnt.status === 'RESOLVED' ? '✓ Resolved' : bnt.staffOnly ? 'Staff maintenance' : '⏳ In Progress'}
                 </span>
                 <span className="text-[10px] text-slate-500 font-mono">{bnt.reportedAt}</span>
               </div>
@@ -288,13 +295,13 @@ export const BountiesPage = ({ userCredits, setUserCredits }) => {
               </div>
 
               {bnt.status === 'DISPATCHED' && bnt.reporterId !== currentUser?.id && (
-                <button
+                bnt.staffOnly && currentUser?.role === 'STUDENT' ? <span className="text-[10px] text-slate-400 max-w-[150px] text-right">Restricted maintenance is handled by campus staff.</span> : <button
                   onClick={() => handleClaimAndSolve(bnt.id, bnt.bountyPts)}
-                  aria-label={`Resolve bounty ${bnt.id} and claim ${bnt.bountyPts} EcoCredits`}
+                  aria-label={bnt.staffOnly ? `Mark staff maintenance task ${bnt.id} complete` : `Resolve bounty ${bnt.id} and claim ${bnt.bountyPts} EcoCredits`}
                   className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-md shadow-emerald-600/30 whitespace-nowrap"
                 >
                   <IconCheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Resolve &amp; Claim</span>
+                  <span>{bnt.staffOnly ? 'Mark staff task complete' : 'Resolve &amp; Claim'}</span>
                 </button>
               )}
             </div>

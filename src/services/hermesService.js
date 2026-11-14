@@ -83,7 +83,7 @@ export async function dispatchWithHermesAgent(ticket) {
         "Calibrate telemetry sensor and submit verified proof to NAAC 7.1.3 audit."
       ],
       assigned_to: {
-        name: "Ramesh K. (Ground Rapid Ops)",
+        name: "Hanuman (Ground Rapid Ops)",
         role: "Lead Environmental Technologist",
         type: "STAFF"
       },

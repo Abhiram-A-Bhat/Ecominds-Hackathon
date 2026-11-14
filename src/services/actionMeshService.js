@@ -13,7 +13,7 @@ export const INITIAL_ACTION_TICKETS = [
     detectedAt: "12 mins ago",
     status: "DISPATCHED",
     assignedTo: {
-      name: "Ramesh K.",
+      name: "Hanuman",
       role: "Ground Ops Specialist (Zone 2)",
       id: "RNS-GS-04",
       type: "STAFF"

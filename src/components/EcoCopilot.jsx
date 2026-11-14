@@ -457,7 +457,7 @@ export const EcoCopilot = () => {
         </button>
       ) : (
         /* Expanded Conversational AI Window */
-        <div className="bg-slate-900 border border-slate-700/90 w-[22rem] sm:w-[27rem] h-[33rem] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="eco-copilot-panel bg-slate-900 border border-slate-700/90 w-[22rem] sm:w-[27rem] h-[33rem] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
           <div className="bg-slate-950 p-3.5 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -786,6 +786,7 @@ export const EcoCopilot = () => {
               <button
                 type="submit"
                 disabled={isLoading || isTranscribing || !input.trim()}
+                aria-busy={isLoading || isTranscribing}
                 className="bg-purple-600 hover:bg-purple-500 text-white p-2.5 rounded-xl font-bold transition shadow-md shadow-purple-600/30 disabled:opacity-40"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

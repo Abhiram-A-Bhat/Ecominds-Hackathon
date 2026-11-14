@@ -66,12 +66,12 @@ export const ROUTES = {
   '/bounties': {
     title: { STUDENT: 'Energy & Water Bounties', STAFF: 'Bounty Fix Queue' }, short: 'Bounties',
     desc: { STUDENT: 'Report phantom power and leaks for +35 pts', STAFF: 'Fix what students reported' },
-    icon: Droplets, accent: '#38bdf8', roles: [STUDENT, STAFF],
+    icon: Droplets, accent: '#38bdf8', roles: [STUDENT, STAFF, ADMIN],
   },
   '/mess': {
     title: 'Zero-Waste Cafeteria', short: 'Cafeteria',
-    desc: { STUDENT: 'Grab surplus food and log clean plates', STAFF: 'Broadcast surplus portions to students' },
-    icon: UtensilsCrossed, accent: '#fbbf24', roles: [STUDENT, STAFF],
+    desc: { STUDENT: 'Reserve leftover meals with EcoCredits and log clean plates', STAFF: 'Broadcast surplus portions for student reservation', ADMIN: 'Review meal broadcasts and reservations' },
+    icon: UtensilsCrossed, accent: '#fbbf24', roles: ALL,
   },
 
   // ── Student + Admin ────────────────────────────────────────────────────
@@ -112,15 +112,15 @@ export const ROUTES = {
   // ── Staff only ─────────────────────────────────────────────────────────
   '/plant-reports': {
     title: 'Plant Care Audits', short: 'Plant Audits', desc: 'Review anonymous Overseer reports and apply penalties',
-    icon: ClipboardCheck, accent: '#f472b6', roles: [STAFF],
+    icon: ClipboardCheck, accent: '#f472b6', roles: [STAFF, ADMIN],
   },
   '/cleaner-ops': {
     title: 'Ground Ops Routing', short: 'Ground Ops', desc: 'Surge forecasting and shortest collection route',
-    icon: Route, accent: '#fb923c', roles: [STAFF],
+    icon: Route, accent: '#fb923c', roles: [STAFF, ADMIN],
   },
   '/scanner': {
     title: 'AI Material Scanner', short: 'Scanner', desc: 'YOLO vision intake station for Lab 104',
-    icon: ScanLine, accent: '#34d399', roles: [STAFF], badge: 'AI',
+    icon: ScanLine, accent: '#34d399', roles: [STAFF, ADMIN], badge: 'AI',
   },
 
   // ── Admin only ─────────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ export const NAV_GROUPS = {
   ],
   ADMIN: [
     { label: 'Overview', items: ['/', '/admin'] },
-    { label: 'Oversight', items: ['/admin-verify', '/cctv-sentinel', '/overseer', '/bins'] },
+    { label: 'Oversight', items: ['/admin-verify', '/cctv-sentinel', '/overseer', '/bins', '/cleaner-ops', '/plant-reports', '/scanner', '/bounties', '/mess'] },
     { label: 'Circular Economy', items: ['/ewaste', '/exchange', '/traceability', '/trees'] },
     { label: 'Reports', items: ['/audit', '/rnsit-matrix', '/leaderboard', '/feedback'] },
   ],

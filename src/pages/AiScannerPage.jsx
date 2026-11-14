@@ -3,11 +3,7 @@ import {
   IconCamera, 
   IconCheckCircle, 
   IconAlertTriangle, 
-  IconMapPin, 
-  IconZap, 
-  IconRecycle, 
-  IconLeaf, 
-  IconDownload 
+  IconMapPin
 } from '../components/Icons';
 import { PRESET_SCAN_ITEMS, classifyPhoneCapture } from '../services/aiVisionService';
 import { triggerEcoCelebration } from '../utils/ecoCelebration';
@@ -19,19 +15,47 @@ export const AiScannerPage = () => {
   const allStudents = (getLiveUsers ? getLiveUsers() : []).filter(u => u.role === 'STUDENT');
   const [selectedStudentUsn, setSelectedStudentUsn] = useState(allStudents[0]?.usn || '1RN23IS005');
   const [customUsnInput, setCustomUsnInput] = useState('');
+  const [awardError, setAwardError] = useState('');
 
   // The laptop does not need a camera; the native photo picker opens the phone camera.
   const [cameraState, setCameraState] = useState('prompt');
   const [errorMessage, setErrorMessage] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [scanResult, setScanResult] = useState(PRESET_SCAN_ITEMS[0]);
+  const [scanResult, setScanResult] = useState(null);
   const [pointsClaimed, setPointsClaimed] = useState(false);
   const [capturedSnapshot, setCapturedSnapshot] = useState(null);
+  const [phoneHost, setPhoneHost] = useState('');
+  const [phoneHostError, setPhoneHostError] = useState('');
+  const [copiedPhoneUrl, setCopiedPhoneUrl] = useState(false);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const phoneCaptureRef = useRef(null);
+
+  useEffect(() => {
+    const currentHost = window.location.hostname;
+    const isLoopback = currentHost === 'localhost' || currentHost === '127.0.0.1' || currentHost === '0.0.0.0';
+    if (!isLoopback) {
+      setPhoneHost(currentHost);
+      return;
+    }
+
+    fetch('http://127.0.0.1:8000/api/local-network')
+      .then(response => {
+        if (!response.ok) throw new Error('Local network address is unavailable.');
+        return response.json();
+      })
+      .then(info => {
+        if (info.lanIp) setPhoneHost(info.lanIp);
+        else setPhoneHostError('Could not detect the laptop Wi-Fi address. Open the scanner using the laptop’s local IP, or check that the API is running.');
+      })
+      .catch(() => setPhoneHostError('Start the local API to create a phone link and QR code.'));
+  }, []);
+
+  const phoneCaptureUrl = phoneHost
+    ? `http://${phoneHost}:${window.location.port || '5173'}/scanner/capture`
+    : '';
 
   const compressCapture = (dataUrl) => new Promise((resolve, reject) => {
     const image = new Image();
@@ -132,9 +156,10 @@ export const AiScannerPage = () => {
   const handleSelectPreset = async (item) => {
     setIsAnalyzing(true);
     setPointsClaimed(false);
+    setAwardError('');
     setCapturedSnapshot(null);
     await new Promise(r => setTimeout(r, 200));
-    setScanResult(item);
+    setScanResult({ ...item, confidence: 'Demo sample', isDemo: true });
     setIsAnalyzing(false);
   };
 
@@ -144,7 +169,11 @@ export const AiScannerPage = () => {
     const targetUsn = customUsnInput.trim() ? customUsnInput.trim().toUpperCase() : selectedStudentUsn;
     const targetStudent = allStudents.find(s => s.usn === targetUsn);
 
-    if (!allotVerifiedPoints?.(targetUsn, pts, `AI Verified: ${scanResult?.name || 'Recyclable'} (Lab 104)`)) return;
+    if (!allotVerifiedPoints?.(targetUsn, pts, `AI Verified: ${scanResult?.name || 'Recyclable'} (Lab 104)`)) {
+      setAwardError(`No student account matches ${targetUsn || 'that USN'}. Choose a listed student or enter a valid USN.`);
+      return;
+    }
+    setAwardError('');
     setPointsClaimed(true);
 
     triggerEcoCelebration({
@@ -198,7 +227,7 @@ export const AiScannerPage = () => {
             AI-Assisted Waste Material Classifier
           </h1>
           <p className="text-xs text-slate-400">
-            Endpoint: <code className="text-emerald-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/scanner</code> • Prevents cross-contamination of plastics, compost & hazardous e-waste.
+            Classifies materials at the point of disposal to keep recycling, compost and hazardous e-waste separate.
           </p>
         </div>
 
@@ -209,6 +238,37 @@ export const AiScannerPage = () => {
           </span>
         </div>
       </div>
+
+      <section className="scanner-phone-connect glass" aria-labelledby="scanner-phone-title">
+        <div className="scanner-phone-copy">
+          <span className="scanner-phone-kicker">Use your phone camera</span>
+          <h2 id="scanner-phone-title">Send a photo to this laptop</h2>
+          <p>Keep both devices on the same Wi-Fi, scan the QR code, and take a photo. The laptop’s local vision service analyzes the image and returns its result to your phone.</p>
+          {phoneCaptureUrl ? (
+            <>
+              <a className="scanner-phone-url" href={phoneCaptureUrl}>{phoneCaptureUrl}</a>
+              <button type="button" className="scanner-copy-url" onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(phoneCaptureUrl);
+                  setCopiedPhoneUrl(true);
+                  window.setTimeout(() => setCopiedPhoneUrl(false), 1800);
+                } catch { setPhoneHostError('Copy was blocked by the browser. You can open the address shown above on the phone.'); }
+              }}>{copiedPhoneUrl ? 'Address copied' : 'Copy phone address'}</button>
+            </>
+          ) : (
+            <p className="scanner-phone-error" role="status">{phoneHostError || 'Detecting this laptop’s Wi-Fi address…'}</p>
+          )}
+          {phoneHostError && phoneCaptureUrl && <p className="scanner-phone-error" role="status">{phoneHostError}</p>}
+        </div>
+        {phoneCaptureUrl && (
+          <img
+            className="scanner-phone-qr"
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(phoneCaptureUrl)}`}
+            alt={`QR code that opens ${phoneCaptureUrl} on a phone`}
+            loading="lazy"
+          />
+        )}
+      </section>
 
       {/* Main Scanner Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -236,7 +296,7 @@ export const AiScannerPage = () => {
           </div>
 
           {/* Viewfinder Window */}
-          <div className="relative aspect-video bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 flex items-center justify-center">
+        <div className="relative min-h-[27rem] bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 flex items-center justify-center p-3 sm:p-5">
             {/* STATE 1: PERMISSION PROMPT SCREEN */}
             {cameraState === 'prompt' && (
               <div className="max-w-md p-6 text-center space-y-3">
@@ -244,12 +304,7 @@ export const AiScannerPage = () => {
                   <IconCamera className="w-7 h-7" />
                 </div>
                 <h3 className="text-base font-extrabold text-white">Capture a photo to classify waste</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Open Ecominds on your phone to use its rear camera, or choose a photo from this device. The image is sent to the laptop vision service over WebSocket for classification.
-                </p>
-                <p className="text-[11px] text-amber-300/90 leading-relaxed">
-                  Phone and laptop must share Wi-Fi. On the phone, open the laptop-hosted page at <strong>http://&lt;laptop-ip&gt;:5173</strong>; this deployed site is not connected to your laptop service.
-                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">Choose a photo on this laptop or use the QR code above to capture one on your phone. Only a still image is sent to the local classifier.</p>
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
                   <button
                     onClick={() => phoneCaptureRef.current?.click()}
@@ -259,9 +314,7 @@ export const AiScannerPage = () => {
                     Take Photo / Choose Image
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-500 italic">
-                  Only the captured image is sent for analysis; no continuous video stream is transmitted.
-                </p>
+                <p className="text-[10px] text-slate-500 italic">No continuous video is transmitted.</p>
               </div>
             )}
 
@@ -346,6 +399,7 @@ export const AiScannerPage = () => {
                   <button
                     onClick={captureAndAnalyze}
                     disabled={isAnalyzing}
+                    aria-busy={isAnalyzing}
                     className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-6 py-2.5 rounded-full shadow-xl shadow-emerald-500/40 transition hover:scale-105 active:scale-95"
                   >
                     <IconCamera className="w-4 h-4 text-slate-950" />
@@ -412,14 +466,15 @@ export const AiScannerPage = () => {
 
         {/* Right Column: AI Scan Output & Routing Instructions */}
         <div className="lg:col-span-5 space-y-4">
-          {scanResult && (
+          {scanResult ? (
             <div className={`rounded-2xl p-6 border shadow-xl ${
               scanResult.isHazardous 
                 ? 'bg-red-950/30 border-red-500/40' 
                 : 'bg-slate-900/90 border-emerald-500/30'
             } space-y-5`}>
               {/* Category & Confidence */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
+                {scanResult.isDemo && <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-amber-500/15 text-amber-700 border border-amber-500/30">Preset simulation</span>}
                 <span className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${
                   scanResult.isHazardous 
                     ? 'bg-red-500/20 text-red-400 border border-red-500/40' 
@@ -428,9 +483,11 @@ export const AiScannerPage = () => {
                   {scanResult.category}
                 </span>
                 <span className="text-xs font-bold text-slate-400 font-mono">
-                  Confidence: <strong className="text-white text-sm">{scanResult.confidence}</strong>
+                  Object score: <strong className="text-white text-sm">{scanResult.confidence}</strong>
                 </span>
               </div>
+              {!scanResult.isDemo && <p className="text-[10px] text-slate-400 -mt-3">Object detection score only; this model has not been validated for material-classification accuracy.</p>}
+              {scanResult.isDemo && <p className="text-[10px] text-amber-700 -mt-3">Preset values are for UI demonstration only and are not model predictions.</p>}
 
               {/* Title & Description */}
               <div>
@@ -575,7 +632,7 @@ export const AiScannerPage = () => {
                     type="text"
                     placeholder="Or enter any custom USN (e.g. 1RN23IS005)..."
                     value={customUsnInput}
-                    onChange={(e) => setCustomUsnInput(e.target.value.toUpperCase())}
+                    onChange={(e) => { setCustomUsnInput(e.target.value.toUpperCase()); setAwardError(''); }}
                     className="w-full bg-slate-900/80 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-purple-400"
                   />
                 </div>
@@ -584,12 +641,20 @@ export const AiScannerPage = () => {
               {/* Confirmation Allotment Button */}
               <button
                 onClick={handleClaimPoints}
-                disabled={pointsClaimed}
+                disabled={pointsClaimed || scanResult.isDemo}
                 className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2"
               >
                 <IconCheckCircle className="w-4 h-4" />
-                {pointsClaimed ? 'Points Allotted for This Scan' : `Allot +${scanResult.ecoCredits} Verified PTS to ${customUsnInput.trim() ? customUsnInput.trim().toUpperCase() : selectedStudentUsn}`}
+                {scanResult.isDemo ? 'Preset demo — points cannot be awarded' : pointsClaimed ? 'Points Allotted for This Scan' : `Allot +${scanResult.ecoCredits} Verified PTS to ${customUsnInput.trim() ? customUsnInput.trim().toUpperCase() : selectedStudentUsn}`}
               </button>
+              {awardError && <p role="alert" className="text-xs font-bold text-rose-300 mt-2">{awardError}</p>}
+            </div>
+          ) : (
+            <div className="scanner-empty-result rounded-2xl p-6 border">
+              <div className="text-[10px] font-black uppercase tracking-wider text-emerald-700">No live result yet</div>
+              <h2 className="text-lg font-extrabold text-slate-900 mt-2">Take a photo to classify an item</h2>
+              <p className="text-sm text-slate-600 mt-2">Results appear here after a laptop capture. A photo taken from the QR page is analyzed by the same laptop service and shown on the phone.</p>
+              <p className="text-xs text-slate-500 mt-3">The preset test bench below is simulated and does not measure classifier accuracy.</p>
             </div>
           )}
 

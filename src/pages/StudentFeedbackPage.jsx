@@ -114,7 +114,7 @@ export function StudentFeedbackPage() {
             <input type="checkbox" checked={anonymous} onChange={event => setAnonymous(event.target.checked)} style={{ marginTop: 3, accentColor: 'var(--role)' }} />
             Submit anonymously. Your name and USN will be hidden from the admin inbox.
           </label>
-          <div><button type="submit" className="btn-eco" disabled={busy || message.trim().length < 10} style={{ padding: '10px 18px', opacity: busy || message.trim().length < 10 ? .55 : 1 }}>{busy ? 'Sending…' : 'Send to admin'}</button></div>
+          <div><button type="submit" className="btn-eco" disabled={busy || message.trim().length < 10} aria-busy={busy} style={{ padding: '10px 18px', opacity: busy || message.trim().length < 10 ? .55 : 1 }}>{busy ? 'Sending…' : 'Send to admin'}</button></div>
         </form>
       )}
 

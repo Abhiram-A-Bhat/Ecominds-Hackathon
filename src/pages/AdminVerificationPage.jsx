@@ -221,7 +221,7 @@ export function AdminVerificationPage() {
           }}
           style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
         >
-          <div style={{ background: '#070f0a', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 20, padding: 24, maxWidth: 440, width: '100%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)' }}>
+          <div style={{ background: 'var(--surface-solid)', color: 'var(--text)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 20, padding: 24, maxWidth: 440, width: '100%', boxShadow: 'var(--shadow-card)' }}>
             <h3 id="reject-dialog-title" className="text-base font-black text-white mb-2">❌ Reject Contribution</h3>
             <p className="text-xs text-slate-400 mb-3">Please provide a constructive reason. The student will be notified directly in their history profile.</p>
             <label htmlFor="reject-reason" className="sr-only">Rejection Reason</label>

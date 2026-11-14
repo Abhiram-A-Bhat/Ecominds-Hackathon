@@ -19,12 +19,11 @@ reports, plant care, recycling, and campus operations.
    listens on `0.0.0.0:8000`; the Vite dev server listens on `0.0.0.0:5173`.
 2. Connect the laptop and phone to the same Wi-Fi network. A phone hotspot also
    works if both devices are connected to that hotspot.
-3. Find the laptop's local IPv4 address (`ipconfig` on Windows, `ip addr` on
-   Linux, or `ifconfig` on macOS). For example, if it is `192.168.1.20`, open
-   `http://192.168.1.20:5173` on the phone.
-4. Open **AI Source Segregator** and tap **Take Photo / Choose Image**. The
-   phone's rear camera opens. Capture the item; Ecominds compresses the still
-   image and sends it over `ws://<laptop-ip>:8000/ws/classify` for analysis.
+3. Open **AI Source Segregator** on the laptop and scan its QR code. It opens a
+   phone capture page served by the laptop. Tap **Take photo**; Ecominds
+   compresses the still image and sends it over
+   `ws://<laptop-ip>:8000/ws/classify` for analysis. Open the displayed LAN URL
+   directly if the QR image service is unavailable.
 5. If the page cannot load, allow inbound TCP ports `5173` and `8000` in the
    laptop firewall for the private Wi-Fi network. Do not use `localhost` on the
    phone: that points to the phone itself.
@@ -33,6 +32,17 @@ The scanner is available to staff accounts. The deployed HTTPS site is not
 connected to a laptop running on your private Wi-Fi; open the laptop-hosted URL
 on the phone for scanning. If you host a separate secure WebSocket vision
 service, set `VITE_VISION_WS_URL` to its `wss://.../ws/classify` address.
+
+### Classifier limits and accuracy
+
+The bundled `yolo26n.pt` is a general object detector. The backend maps a small
+set of detected COCO object labels to campus disposal guidance; it is not a
+material-composition model trained on RNSIT waste photos. The displayed score
+is the detector's object confidence, not measured classification accuracy.
+Preset test-bench cards are simulations and are marked as such. No labeled,
+representative validation dataset is currently included, so the project cannot
+claim an accuracy percentage. Staff should verify items—especially batteries
+and other hazardous waste—before assigning points or disposing of them.
 
 The CCTV screen uses the bundled `public/cctv/classroom-stock-demo.mp4` clip,
 not an actual campus camera stream. The player labels it as stock classroom

@@ -8,7 +8,7 @@ import { IconMapPin, IconCpu } from '../components/Icons';
 import { triggerConfetti } from '../utils/confetti';
 import { fetchLiveBinReading } from '../services/liveBinReadingsService';
 
-export const CampusBinsPage = ({ bins, onEmptyBin, liveReading = null }) => {
+export const CampusBinsPage = ({ bins, onEmptyBin, liveReading = null, onLiveBinReading }) => {
   const { isOperator: isAdmin } = useAuth();
   const [filter, setFilter] = useState('ALL');
   const [dataMode, setDataMode] = useState('mock');
@@ -25,7 +25,8 @@ export const CampusBinsPage = ({ bins, onEmptyBin, liveReading = null }) => {
         const reading = await fetchLiveBinReading(binId);
         if (!cancelled) {
           setSensorReading(reading);
-          setSensorReachable(true);
+          setSensorReachable(!!reading);
+          if (reading) onLiveBinReading?.(reading);
         }
       } catch {
         if (!cancelled) setSensorReachable(false);
@@ -34,7 +35,7 @@ export const CampusBinsPage = ({ bins, onEmptyBin, liveReading = null }) => {
     loadLatest();
     const timer = window.setInterval(loadLatest, 2000);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [dataMode]);
+  }, [dataMode, onLiveBinReading]);
 
   useEffect(() => {
     fetchCampusWeather().then(w => setAmbientWeather(w)).catch(() => {});

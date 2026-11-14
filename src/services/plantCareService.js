@@ -77,19 +77,19 @@ const adopted = (now, by, name, days, wateredHrsAgo, streak) => ({
 });
 
 const seedPlants = (now) => [
-  plant('PLT-01', 'Tulsi', 'Ocimum tenuiflorum', '🌿', 'North gate road, west kerb', adopted(now, 'stu-001', 'Divyashree S.', 20, 6, 9)),
-  plant('PLT-02', 'Hibiscus', 'Hibiscus rosa-sinensis', '🌺', 'North gate road, east kerb', adopted(now, 'stu-004', 'Ravi Kumar M.', 12, 3, 6)),
-  plant('PLT-03', 'Areca Palm', 'Dypsis lutescens', '🌴', 'West block road, library foyer', adopted(now, 'stu-002', 'Sowmyashree S.', 120, 20, 14)),
+  plant('PLT-01', 'Tulsi', 'Ocimum tenuiflorum', '🌿', 'North gate road, west kerb', adopted(now, 'stu-001', 'Draupadi', 20, 6, 9)),
+  plant('PLT-02', 'Hibiscus', 'Hibiscus rosa-sinensis', '🌺', 'North gate road, east kerb', adopted(now, 'stu-004', 'Nakula', 12, 3, 6)),
+  plant('PLT-03', 'Areca Palm', 'Dypsis lutescens', '🌴', 'West block road, library foyer', adopted(now, 'stu-002', 'Subhadra', 120, 20, 14)),
   plant('PLT-04', 'Neem sapling', 'Azadirachta indica', '🌱', 'Lower campus road, west', { lastWateredAt: now - 40 * H }),
   plant('PLT-05', 'Aloe vera', 'Aloe barbadensis', '🪴', 'Main block, south steps', { lastWateredAt: now - 50 * H }),
   plant('PLT-06', 'Money plant', 'Epipremnum aureum', '🍃', '23rd Cross Road gate, annex entrance', { lastWateredAt: now - 30 * H }),
-  plant('PLT-07', 'Marigold bed', 'Tagetes erecta', '🌼', '23rd Cross Road side gate', adopted(now, 'stu-003', 'Harshitha P.', 15, 10, 7)),
+  plant('PLT-07', 'Marigold bed', 'Tagetes erecta', '🌼', '23rd Cross Road side gate', adopted(now, 'stu-003', 'Lakshmi', 15, 10, 7)),
   plant('PLT-08', 'Snake plant', 'Dracaena trifasciata', '🌵', 'South lawn path kiosk (covered)', { lastWateredAt: now - 60 * H }),
-  plant('PLT-09', 'Young neem', 'Azadirachta indica', '🌱', 'South lawn, row 1', adopted(now, 'stu-005', 'Priya Nair', 9, 18, 4)),
+  plant('PLT-09', 'Young neem', 'Azadirachta indica', '🌱', 'South lawn, row 1', adopted(now, 'stu-005', 'Sahadeva', 9, 18, 4)),
   plant('PLT-10', 'Herb tulsi', 'Ocimum tenuiflorum', '🌿', 'South lawn herb patch', { lastWateredAt: now - 26 * H }),
-  plant('PLT-11', 'Red hibiscus', 'Hibiscus rosa-sinensis', '🌺', 'Temple road, west hedge', adopted(now, 'stu-x-karthik', 'Karthik V.', 25, 8, 11)),
-  plant('PLT-12', 'Temple marigolds', 'Tagetes erecta', '🌼', 'Shiva Temple, front bed', adopted(now, 'stu-x-meghana', 'Meghana H.', 18, 14, 5)),
-  plant('PLT-13', 'Grove neem', 'Azadirachta indica', '🌱', 'Temple east grove', adopted(now, 'stu-x-ananya', 'Ananya R.', 40, 22, 16)),
+  plant('PLT-11', 'Red hibiscus', 'Hibiscus rosa-sinensis', '🌺', 'Temple road, west hedge', adopted(now, 'stu-x-karthik', 'Skanda', 25, 8, 11)),
+  plant('PLT-12', 'Temple marigolds', 'Tagetes erecta', '🌼', 'Shiva Temple, front bed', adopted(now, 'stu-x-meghana', 'Ganga', 18, 14, 5)),
+  plant('PLT-13', 'Grove neem', 'Azadirachta indica', '🌱', 'Temple east grove', adopted(now, 'stu-x-ananya', 'Radha', 40, 22, 16)),
   plant('PLT-14', 'Desert aloe', 'Aloe barbadensis', '🪴', 'East service road', { lastWateredAt: now - 70 * H }),
   plant('PLT-15', 'Pink hibiscus', 'Hibiscus rosa-sinensis', '🌺', 'South boundary road, west', { lastWateredAt: now - 20 * H }),
 ];

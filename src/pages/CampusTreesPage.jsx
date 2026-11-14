@@ -12,6 +12,7 @@ export const CampusTreesPage = ({ trees, setTrees, userCredits, setUserCredits }
   const [adoptingTree, setAdoptingTree] = useState(null);
   const [wateringLogs, setWateringLogs] = useState({});
   const [expandedLog, setExpandedLog] = useState(null);
+  const annualCaptureKg = trees.reduce((total, tree) => total + (Number(tree.co2Num) || 0), 0);
 
   const handleWater = (treeId) => {
     const targetTree = trees.find(t => t.id === treeId);
@@ -114,7 +115,7 @@ export const CampusTreesPage = ({ trees, setTrees, userCredits, setUserCredits }
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-3 py-1.5 rounded-xl font-bold">
-            Total Sequestration: 1.24 Tons CO2/yr
+            Estimated roadside and campus tree capture: {(annualCaptureKg / 1000).toFixed(2)} tons CO₂/yr
           </span>
         </div>
       </div>

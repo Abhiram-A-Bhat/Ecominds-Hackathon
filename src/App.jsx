@@ -21,6 +21,7 @@ import { ActionMeshCenter } from './components/ActionMeshCenter';
 import { GreenGuardianDrawer } from './components/GreenGuardianDrawer';
 import { EcoMascotPopup } from './components/EcoMascotPopup';
 import { GuardianAlarm } from './components/guardian/GuardianAlarm';
+import { StaffBinAlarm } from './components/StaffBinAlarm';
 import { PlantReminder } from './components/PlantReminder';
 import { plantCareService } from './services/plantCareService';
 import { triggerEcoCelebration } from './utils/ecoCelebration';
@@ -32,6 +33,7 @@ import { useAuth, resetLiveUsers } from './contexts/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
 import { AiScannerPage } from './pages/AiScannerPage';
+import { PhoneCapturePage } from './pages/PhoneCapturePage';
 import { CampusBinsPage } from './pages/CampusBinsPage';
 import { EwastePage } from './pages/EwastePage';
 import { ExchangePage } from './pages/ExchangePage';
@@ -156,16 +158,60 @@ function AppContent() {
   }, [currentUser, path]);
 
   // Shared campus-state (bins, trees, etc.)
-  const [bins, setBins] = useState(INITIAL_BINS);
+  const [bins, setBins] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('ecosphere_bins_v1') || 'null');
+      return Array.isArray(saved) ? saved : INITIAL_BINS;
+    } catch { return INITIAL_BINS; }
+  });
   const [salvagedItems, setSalvagedItems] = useState(SALVAGED_EWASTE_ITEMS);
   const [exchangeItems, setExchangeItems] = useState(PASS_THE_TORCH_ITEMS);
   const [trees, setTrees] = useState(CAMPUS_TREES);
-  const [surplusAlerts, setSurplusAlerts] = useState(SURPLUS_FOOD_BROADCASTS);
+  const [surplusAlerts, setSurplusAlerts] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('ecosphere_surplus_food_v1') || 'null');
+      return Array.isArray(saved) ? saved : SURPLUS_FOOD_BROADCASTS;
+    } catch { return SURPLUS_FOOD_BROADCASTS; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('ecosphere_bins_v1', JSON.stringify(bins)); } catch { /* current session remains usable */ }
+  }, [bins]);
+
+  useEffect(() => {
+    const syncBins = (event) => {
+      if (event.key !== 'ecosphere_bins_v1' || !event.newValue) return;
+      try {
+        const saved = JSON.parse(event.newValue);
+        if (Array.isArray(saved)) setBins(saved);
+      } catch { /* ignore malformed cross-tab data */ }
+    };
+    window.addEventListener('storage', syncBins);
+    return () => window.removeEventListener('storage', syncBins);
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem('ecosphere_surplus_food_v1', JSON.stringify(surplusAlerts)); } catch { /* demo data remains available in memory */ }
+  }, [surplusAlerts]);
+
+  useEffect(() => {
+    const syncSurplusMeals = (event) => {
+      if (event.key !== 'ecosphere_surplus_food_v1' || !event.newValue) return;
+      try {
+        const saved = JSON.parse(event.newValue);
+        if (Array.isArray(saved)) setSurplusAlerts(saved);
+      } catch { /* ignore malformed cross-tab data */ }
+    };
+    window.addEventListener('storage', syncSurplusMeals);
+    return () => window.removeEventListener('storage', syncSurplusMeals);
+  }, []);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isGamificationOpen, setIsGamificationOpen] = useState(false);
   const [isActionMeshOpen, setIsActionMeshOpen] = useState(false);
   const [isGuardianDrawerOpen, setIsGuardianDrawerOpen] = useState(false);
+  const [staffBinAlerts, setStaffBinAlerts] = useState([]);
+  const alertedLiveBinIdsRef = useRef(new Set());
   const [userXp, setUserXp] = useState(currentUser?.xp ?? 0);
 
   // Derive credits from current user (falls back gracefully for admin)
@@ -176,31 +222,68 @@ function AppContent() {
     updateCredits(next - latestCredits);
   };
 
-  // Request notification permission once on load
+  const enqueueStaffBinAlert = useCallback((bin, source = 'mock') => {
+    if (!['STAFF', 'ADMIN'].includes(role)) return;
+    const alert = {
+      key: `${source}:${bin.id || bin.binId}:${bin.measuredAt || 'threshold'}`,
+      binId: bin.id || bin.binId,
+      binName: bin.name || bin.binName,
+      block: bin.block || bin.location || 'Campus Grounds',
+      fillPercent: Number(bin.fillLevel ?? bin.fillPercent),
+      source,
+    };
+    setStaffBinAlerts(current => current.some(item => item.binId === alert.binId) ? current : [...current, alert]);
+  }, [role]);
+
+  const handleLiveBinReading = useCallback((reading) => {
+    const level = Number(reading?.fillPercent);
+    if (!reading?.binId || !Number.isFinite(level) || level < 0 || level > 100) return;
+    if (level >= 80 && !alertedLiveBinIdsRef.current.has(reading.binId)) {
+      if (['STAFF', 'ADMIN'].includes(role)) alertedLiveBinIdsRef.current.add(reading.binId);
+      enqueueStaffBinAlert({ ...reading, fillPercent: level }, 'live');
+      const existing = guardianTaskService.getTasks().some(task => task.category === 'BIN_OVERFLOW' && task.targetId === reading.binId && task.status !== 'COMPLETED');
+      if (!existing) guardianTaskService.createTask({
+        title: `${reading.binName || `Bin ${reading.binId}`} is ${Math.round(level)}% full — clear it`,
+        targetId: reading.binId,
+        assignedStaffId: 'staff-001',
+        assignedStaffName: 'Hanuman',
+        location: reading.location || 'Campus Grounds',
+        category: 'BIN_OVERFLOW', severity: 'CRITICAL', points: 0,
+        detectedBy: 'Live ESP32 ultrasonic sensor', appliances: 'Campus bin collection',
+      });
+    }
+    if (level < 80) {
+      alertedLiveBinIdsRef.current.delete(reading.binId);
+      setStaffBinAlerts(current => current.filter(alert => alert.binId !== reading.binId));
+    }
+  }, [enqueueStaffBinAlert, role]);
+
+  // Request browser notifications only for campus operations roles.
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
+    if (['STAFF', 'ADMIN'].includes(role) && 'Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
-  }, []);
+  }, [role]);
 
   // Watch for bins going CRITICAL and fire browser notification
-  const prevBinsRef = useRef(bins);
+  const alertedMockBinIdsRef = useRef(new Set());
   useEffect(() => {
-    const prevBins = prevBinsRef.current;
     bins.forEach(bin => {
-      const prev = prevBins.find(b => b.id === bin.id);
-      if (prev && prev.fillLevel < 80 && bin.fillLevel >= 80) {
-        if ('Notification' in window && Notification.permission === 'granted') {
+      const wasAlerted = alertedMockBinIdsRef.current.has(bin.id);
+      if (['STAFF', 'ADMIN'].includes(role) && bin.fillLevel >= 80 && !wasAlerted) {
+        alertedMockBinIdsRef.current.add(bin.id);
+        enqueueStaffBinAlert(bin, 'mock');
+        if (['STAFF', 'ADMIN'].includes(role) && 'Notification' in window && Notification.permission === 'granted') {
           new Notification('🚨 Ecominds Alert: Bin Surge Detected', {
             body: `${bin.name} (${bin.block}) has reached ${bin.fillLevel}% — immediate collection needed.`,
-            icon: '/brand/rnsit-25th-anniversary.png',
+            icon: '/favicon.svg',
             tag: bin.id,
           });
         }
       }
+      if (bin.fillLevel < 80) alertedMockBinIdsRef.current.delete(bin.id);
     });
-    prevBinsRef.current = bins;
-  }, [bins]);
+  }, [bins, role, enqueueStaffBinAlert]);
 
   // Global Ctrl+K
   useEffect(() => {
@@ -245,7 +328,7 @@ function AppContent() {
   // Dynamic page title per route — WCAG 2.4.2 (Page Titled)
   useEffect(() => {
     const route = getRoute(path, role || 'STUDENT');
-    const pageTitle = path === '/login' ? 'Sign In' : route?.title || 'Not found';
+    const pageTitle = path === '/login' ? 'Sign In' : path === '/scanner/capture' ? 'Phone Photo Intake' : route?.title || 'Not found';
     document.title = `${pageTitle} — Ecominds RNSIT`;
   }, [path, role]);
 
@@ -256,6 +339,7 @@ function AppContent() {
       }
       return bin;
     }));
+    setStaffBinAlerts(current => current.filter(alert => alert.binId !== binId));
     const openTicket = actionMesh.getTickets().find(t => t.targetEntityId === binId && t.status !== 'RESOLVED');
     if (openTicket) {
       actionMesh.resolveTicket(openTicket.id, `Cleared & verified by Ground Ops at ${new Date().toLocaleTimeString()}`);
@@ -281,13 +365,6 @@ function AppContent() {
     }));
 
     if (newLevel >= 80) {
-      triggerEcoCelebration({
-        title: `🚨 IOT BIN SURGE: ${targetBin.name}!`,
-        message: `Ultrasonic sensor reports ${newLevel}% full. A collection task was assigned to Ramesh K. in Ground Ops.`,
-        points: 0,
-        badge: `SURGE ${newLevel}%`
-      });
-
       const activeCollection = guardianTaskService.getTasks().some(task =>
         task.category === 'BIN_OVERFLOW' && task.targetId === binId && task.status !== 'COMPLETED');
       if (!activeCollection) {
@@ -295,7 +372,7 @@ function AppContent() {
           title: `Empty ${targetBin.name} (${binId}) — sensor at ${newLevel}%`,
           targetId: binId,
           assignedStaffId: 'staff-001',
-          assignedStaffName: 'Ramesh K.',
+          assignedStaffName: 'Hanuman',
           location: `${targetBin.block} (12.9018° N, 77.5184° E)`,
           category: 'BIN_OVERFLOW',
           severity: 'CRITICAL',
@@ -309,6 +386,10 @@ function AppContent() {
   };
 
   // Show login page without shell
+  if (path === '/scanner/capture') {
+    return <PhoneCapturePage />;
+  }
+
   if (!currentUser || path === '/login') {
     return <LoginPage />;
   }
@@ -319,11 +400,11 @@ function AppContent() {
     '/cctv-sentinel':() => <CctvSentinelPage />,
     '/rnsit-matrix': () => <RnsitIdeasPage userCredits={userCredits} setUserCredits={setUserCredits} onOpenActionMesh={() => setIsActionMeshOpen(true)} />,
     '/scanner':      () => <AiScannerPage userCredits={userCredits} setUserCredits={setUserCredits} />,
-    '/bins':         () => <CampusBinsPage bins={bins} onEmptyBin={handleEmptyBin} />,
+    '/bins':         () => <CampusBinsPage bins={bins} onEmptyBin={handleEmptyBin} onLiveBinReading={handleLiveBinReading} />,
     '/ewaste':       () => <EwastePage salvagedItems={salvagedItems} setSalvagedItems={setSalvagedItems} userCredits={userCredits} setUserCredits={setUserCredits} />,
     '/traceability': () => <TraceabilityLedgerPage />,
     '/exchange':     () => <ExchangePage userCredits={userCredits} setUserCredits={setUserCredits} />,
-    '/mess':         () => <CafeteriaPage surplusAlerts={surplusAlerts} setSurplusAlerts={setSurplusAlerts} userCredits={userCredits} setUserCredits={setUserCredits} />,
+    '/mess':         () => <CafeteriaPage key={currentUser?.id} surplusAlerts={surplusAlerts} setSurplusAlerts={setSurplusAlerts} userCredits={userCredits} setUserCredits={setUserCredits} />,
     '/bounties':     () => <BountiesPage userCredits={userCredits} setUserCredits={setUserCredits} />,
     '/trees':        () => <CampusTreesPage trees={trees} setTrees={setTrees} userCredits={userCredits} setUserCredits={setUserCredits} />,
     '/cleaner-ops':  () => <CleanerOpsPage bins={bins} onEmptyBin={handleEmptyBin} />,
@@ -400,7 +481,7 @@ function AppContent() {
             <span>
               <strong style={{ color: 'var(--text-2)' }}>RNS Institute of Technology</strong> · Team <strong style={{ color: 'var(--green)' }}>ECO MINDS</strong> · Faculty Hackathon 2026
             </span>
-            <span title="Divyashree S · Sowmyashree S · Kavitha S · Purnima S Mittalkod · Nayana C P · Harshitha P">
+            <span title="Draupadi · Subhadra · Vyasa · Parvati · Gargi · Lakshmi">
               UN SDG 11 · 12 · 13 · Mission LiFE
               {isAdmin && <> · <Link to="/audit" style={{ color: 'var(--green)', textDecoration: 'none' }}>NAAC archive</Link></>}
             </span>
@@ -459,6 +540,12 @@ function AppContent() {
       />
 
       <EcoMascotPopup />
+
+      <StaffBinAlarm
+        alert={staffBinAlerts[0] || null}
+        onDismiss={() => setStaffBinAlerts(current => current.slice(1))}
+        onOpen={() => setStaffBinAlerts(current => current.slice(1))}
+      />
 
       {isStudent && <GuardianAlarm onOpenMissions={openGuardians} />}
       {isStudent && <PlantReminder />}

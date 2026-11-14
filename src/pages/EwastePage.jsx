@@ -193,7 +193,7 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems }) => {
             Electronic Waste Circular Lifecycle Hub
           </h1>
           <p className="text-xs text-slate-400">
-            Endpoint: <code className="text-blue-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/ewaste</code> • Closed-loop salvage for final year student components & RoHS certified recycler disposal.
+            Recover useful components for student labs and send remaining material to a certified recycler.
           </p>
         </div>
 
@@ -481,7 +481,7 @@ export const EwastePage = ({ salvagedItems, setSalvagedItems }) => {
             </select>
             <input type="text" placeholder="Specs / description" value={newEwaste.specs} onChange={e => setNewEwaste({ ...newEwaste, specs: e.target.value })} className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white" />
             <button
-              type="button" onClick={runDepositAnalysis} disabled={!newEwaste.name.trim() || isAnalyzingComponent}
+              type="button" onClick={runDepositAnalysis} disabled={!newEwaste.name.trim() || isAnalyzingComponent} aria-busy={isAnalyzingComponent}
               className="bg-blue-600 hover:bg-blue-500 text-white font-black text-xs py-2.5 rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-1.5"
             >
               <IconZap className="w-4 h-4 text-amber-300" />

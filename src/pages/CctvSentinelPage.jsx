@@ -203,7 +203,7 @@ export function CctvSentinelPage() {
             AI CCTV Occupancy Sentinel · Demo
           </h1>
           <p className="text-xs text-slate-400">
-            Endpoint: <code className="text-emerald-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/cctv-sentinel</code> • Stock CCTV-style footage and simulated room telemetry are for demonstration. The generated still below can be analyzed on demand; it never represents a live campus camera. A Guardian must verify any room in person.
+            Demo footage and simulated room readings show how the energy alert works. No live campus camera is connected; a Guardian verifies each room in person.
           </p>
         </div>
 
@@ -353,7 +353,7 @@ export function CctvSentinelPage() {
               <p className="text-[11px] text-amber-300 mt-1">Synthetic image used for testing only. It is not a live camera feed or a real campus alert.</p>
             </div>
             <img src="/cctv/classroom-empty-demo.jpg" alt="Generated demo image of an empty classroom with lights, fans and projector on" className="w-full max-h-[420px] object-contain bg-black rounded-xl border border-slate-800" />
-            <button type="button" disabled={inspectionLoading} onClick={inspectGeneratedClassroom} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold">
+            <button type="button" disabled={inspectionLoading} aria-busy={inspectionLoading} onClick={inspectGeneratedClassroom} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold">
               {inspectionLoading ? 'Inspecting image…' : 'Run vision inspection'}
             </button>
             {inspectionError && <p role="alert" className="text-xs text-red-300">{inspectionError}</p>}

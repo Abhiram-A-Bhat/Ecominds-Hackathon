@@ -13,6 +13,7 @@ import {
 } from './Icons';
 import { PRESET_SCAN_ITEMS, classifyImageHeuristic } from '../services/aiVisionService';
 import { triggerConfetti } from '../utils/confetti';
+import { Link } from '../router/Router';
 
 export const StudentPortal = ({ 
   userCredits, 
@@ -554,15 +555,9 @@ export const StudentPortal = ({
                   </div>
                   <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
                     <span className="text-xs text-emerald-400 font-bold">{alert.claimedPct}% Claimed</span>
-                    <button
-                      onClick={() => {
-                        setSurplusAlerts(prev => prev.map(a => a.id === alert.id ? { ...a, claimedPct: 100, status: "COMPLETED" } : a));
-                        triggerConfetti();
-                      }}
-                      className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition"
-                    >
-                      Reserve Portion (Free)
-                    </button>
+                    <Link to="/mess" className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition">
+                      Reserve with EcoCredits
+                    </Link>
                   </div>
                 </div>
               ))}

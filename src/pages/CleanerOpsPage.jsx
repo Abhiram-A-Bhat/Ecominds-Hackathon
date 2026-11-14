@@ -53,8 +53,7 @@ export const CleanerOpsPage = ({ bins, onEmptyBin }) => {
             Ground Ops &amp; Dynamic Walking Route Optimizer
           </h1>
           <p className="text-xs text-slate-400">
-            Endpoint: <code className="text-orange-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/cleaner-ops</code>
-            &nbsp;• Priority heuristic algorithm that cuts walking fatigue by prioritizing critical ≥80% bins.
+            Prioritizes bins at 80% or more and plans a shorter collection route for campus staff.
           </p>
         </div>
 
@@ -286,7 +285,7 @@ export const CleanerOpsPage = ({ bins, onEmptyBin }) => {
                   <div className="bg-red-950/40 border border-red-500/30 p-2.5 rounded-xl text-[11px] text-red-300 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 font-bold">
                       <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
-                      <span>👷 Assigned: Ramesh K. (Ground Ops Zone 2)</span>
+                      <span>👷 Assigned: Hanuman (Ground Ops Zone 2)</span>
                     </div>
                     <span className="font-mono text-[9px] bg-red-900/60 text-red-200 px-2 py-0.5 rounded border border-red-500/30">
                       ACO Priority #1

@@ -120,8 +120,7 @@ export const AdminAnalyticsPage = ({ bins, onUpdateBinFill }) => {
             Admin Sustainability &amp; IoT Sensor Console
           </h1>
           <p className="text-xs text-slate-400">
-            Endpoint: <code className="text-cyan-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/admin</code>
-            &nbsp;• Live sensor diagnostics, digital twin telemetry, and interactive simulation sliders.
+            Monitor bin sensors, review campus telemetry and simulate fill levels from one console.
           </p>
         </div>
         <div className="flex items-center gap-2.5">

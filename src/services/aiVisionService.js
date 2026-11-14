@@ -98,10 +98,9 @@ export const PRESET_SCAN_ITEMS = [
 ];
 
 export const classifyImageWithYOLO26 = async (imageDataUrl) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-
     const res = await fetch("/api/detect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -109,36 +108,34 @@ export const classifyImageWithYOLO26 = async (imageDataUrl) => {
       signal: controller.signal
     });
 
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const data = await res.json();
-      const match = data.best_match;
-      return {
-        id: `yolo26-${Date.now()}`,
-        name: match.name,
-        category: match.category,
-        confidence: match.confidence,
-        model: "Ultralytics YOLO26 (NMS-Free End-to-End)",
-        latency: `${data.inference_time_ms}ms`,
-        isHazardous: match.isHazardous,
-        targetBin: match.targetBin,
-        action: match.action,
-        carbonSavedKg: match.carbonSavedKg,
-        ecoCredits: match.ecoCredits,
-        emoji: match.isHazardous ? "🔋" : match.category.includes("PLASTIC") ? "🍾" : match.category.includes("ORGANIC") ? "🥗" : "📦",
-        materials: ["Neural Feature Extractor", "Material Reflectance Analyzed"],
-        recyclingGuidance: "Verified by real-time Ultralytics YOLO26 vision model."
-      };
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.best_match) {
+      throw new Error(data.error || 'The classifier could not identify a supported item.');
     }
+    const match = data.best_match;
+    return {
+      id: `yolo26-${Date.now()}`,
+      name: match.name,
+      category: match.category,
+      confidence: match.confidence,
+      model: data.inference_engine || "Ultralytics YOLO object detector",
+      latency: `${data.inference_time_ms}ms`,
+      isHazardous: match.isHazardous,
+      targetBin: match.targetBin,
+      action: match.action,
+      carbonSavedKg: match.carbonSavedKg,
+      ecoCredits: match.ecoCredits,
+      emoji: match.isHazardous ? "🔋" : match.category.includes("PLASTIC") ? "🍾" : match.category.includes("ORGANIC") ? "🥗" : "📦",
+      materials: ["Detected object label: " + match.name],
+      recyclingGuidance: "Campus disposal guidance is mapped from the detected object label; material composition is not measured."
+    };
   } catch (err) {
-    console.warn("FastAPI YOLO26 server offline or timeout, falling back to bundled YOLO26 inference:", err);
+    throw new Error(err.name === 'AbortError'
+      ? 'The local vision service timed out. Check that the laptop API is running.'
+      : err.message || 'The local vision service could not classify this image.');
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  // Seamless fallback to bundled YOLO26 heuristic
-  await new Promise(r => setTimeout(r, 200));
-  const randomIndex = Math.floor(Math.random() * PRESET_SCAN_ITEMS.length);
-  return PRESET_SCAN_ITEMS[randomIndex];
 };
 
 const getVisionSocketUrl = () => {

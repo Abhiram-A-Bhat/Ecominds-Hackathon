@@ -1,46 +1,70 @@
 import React, { useState } from 'react';
-import { IconUtensils, IconCheckCircle, IconZap } from '../components/Icons';
+import { IconUtensils, IconCheckCircle } from '../components/Icons';
 import { triggerEcoCelebration } from '../utils/ecoCelebration';
 import { Link } from '../router/Router';
 import { actionMesh } from '../services/actionMeshService';
 import { useAuth } from '../contexts/AuthContext';
 
 export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, setUserCredits }) => {
-  const { addContribution, currentUser } = useAuth();
-  const claimKey = `ecominds_cafeteria_claims_${currentUser?.id || 'guest'}_${new Date().toLocaleDateString('en-CA')}`;
+  const { addContribution, adjustPoints, currentUser, role } = useAuth();
+  const [claimDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const claimKey = `ecominds_cafeteria_claims_${currentUser?.id || 'guest'}_${claimDate}`;
   const [claimedItems, setClaimedItems] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem(claimKey) || '[]')); } catch { return new Set(); }
+    try { return new Set(JSON.parse(localStorage.getItem(claimKey) || '[]')); }
+    catch { return new Set(); }
   });
   const [claimToast, setClaimToast] = useState('');
+  const [broadcast, setBroadcast] = useState({ event: '', items: '', location: '', portions: '', pointsCost: '10', bestBefore: 'Within 45 minutes' });
 
   const handleClaimSurplus = (alertId) => {
     const targetAlert = surplusAlerts.find(a => a.id === alertId);
+    const pointsCost = Number(targetAlert?.pointsCost ?? 10);
     let storedClaims = [];
     try { storedClaims = JSON.parse(localStorage.getItem(claimKey) || '[]'); } catch { /* use in-memory state */ }
-    if (!targetAlert || targetAlert.status !== 'ACTIVE' || claimedItems.has(alertId) || storedClaims.includes(alertId)) return;
-    setSurplusAlerts(prev => prev.map(a => a.id === alertId ? { ...a, claimedPct: 100, status: "COMPLETED" } : a));
+    const available = Math.max(0, Number(targetAlert?.portions || 0) - Number(targetAlert?.reservedPortions || 0));
+    if (!targetAlert || targetAlert.status !== 'ACTIVE' || available < 1 || claimedItems.has(alertId) || storedClaims.includes(alertId)) return;
+    if (userCredits < pointsCost) {
+      setClaimToast(`You need ${pointsCost} EcoCredits to reserve a meal.`);
+      window.setTimeout(() => setClaimToast(''), 4000);
+      return;
+    }
+    const portions = Math.max(1, Number(targetAlert.portions) || 1);
+    setSurplusAlerts(prev => prev.map(a => {
+      if (a.id !== alertId) return a;
+      const reservedPortions = Math.min(portions, (Number(a.reservedPortions) || 0) + 1);
+      const claimedPct = Math.round(reservedPortions / portions * 100);
+      return { ...a, claimedPct, reservedPortions, status: reservedPortions >= portions ? 'COMPLETED' : 'ACTIVE' };
+    }));
     const nextClaims = [...new Set([...storedClaims, alertId])];
-    localStorage.setItem(claimKey, JSON.stringify(nextClaims));
+    try { localStorage.setItem(claimKey, JSON.stringify(nextClaims)); } catch { /* keep this reservation in memory */ }
     setClaimedItems(new Set(nextClaims));
-    setClaimToast('✅ Food claimed! Please collect within 10 minutes from the location.');
-    setTimeout(() => setClaimToast(''), 4000);
+    setClaimToast(`Meal reserved for ${pointsCost} EcoCredits. Collect within 10 minutes at the counter.`);
+    window.setTimeout(() => setClaimToast(''), 4000);
     // Auto-resolve corresponding Action Mesh ticket
     actionMesh.resolveTicket("ACT-103", "Canteen surplus claimed & distributed to students.");
-    setUserCredits(prev => prev + 10);
-    if (addContribution) {
-      addContribution({
-        action: `Reserved Surplus Meal: ${targetAlert?.event || 'Cafeteria Event'}`,
-        points: 10,
-        type: 'FOOD',
-        status: 'APPROVED',
-      });
-    }
+    if (currentUser?.id) adjustPoints(currentUser.id, -pointsCost, `Reserved surplus meal: ${targetAlert.event}`, 'FOOD');
     triggerEcoCelebration({
-      title: '🍱 Surplus Meal Reserved!',
-      message: 'Canteen surplus claimed & redistributed. Zero food waste logged. Show confirmation at mess counter.',
-      points: 10,
-      badge: '+10 EcoCredits'
+      title: 'Surplus meal reserved',
+      message: `Collect your reserved portion at ${targetAlert.location} within 10 minutes.`,
+      points: 0,
+      badge: `−${pointsCost} EcoCredits`
     });
+  };
+
+  const handleBroadcast = (event) => {
+    event.preventDefault();
+    const portions = Math.floor(Number(broadcast.portions));
+    const pointsCost = Math.floor(Number(broadcast.pointsCost));
+    if (!broadcast.event.trim() || !broadcast.items.trim() || !broadcast.location.trim() || portions < 1 || pointsCost < 0) return;
+    const postedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setSurplusAlerts(prev => [{
+      id: `SF-${Date.now()}`, event: broadcast.event.trim(), items: broadcast.items.trim(), location: broadcast.location.trim(),
+      portions, reservedPortions: 0, pointsCost, bestBefore: broadcast.bestBefore.trim() || 'Within 45 minutes',
+      postedAt: `Today, ${postedAt}`, target: 'Students', claimedPct: 0, status: 'ACTIVE',
+    }, ...prev]);
+    setBroadcast({ event: '', items: '', location: '', portions: '', pointsCost: '10', bestBefore: 'Within 45 minutes' });
+    setClaimToast('Leftover meal broadcast is now available to students.');
+    window.setTimeout(() => setClaimToast(''), 4000);
   };
 
   const handleCleanPlate = () => {
@@ -48,7 +72,7 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
     try { storedClaims = JSON.parse(localStorage.getItem(claimKey) || '[]'); } catch { /* use in-memory state */ }
     if (claimedItems.has('clean-plate') || storedClaims.includes('clean-plate')) return;
     const nextClaims = [...new Set([...storedClaims, 'clean-plate'])];
-    localStorage.setItem(claimKey, JSON.stringify(nextClaims));
+    try { localStorage.setItem(claimKey, JSON.stringify(nextClaims)); } catch { /* keep this log in memory */ }
     setClaimedItems(new Set(nextClaims));
     setUserCredits(prev => prev + 10);
     if (addContribution) {
@@ -81,7 +105,7 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
             Zero-Hunger, Zero-Waste Campus Food Loop
           </h1>
           <p className="text-xs text-slate-400">
-            Fresh surplus meals available for students right after hostel lunch, plus earn EcoCredits for zero plate waste!
+            Reserve a leftover meal with EcoCredits and collect it from the listed cafeteria counter.
           </p>
         </div>
 
@@ -109,11 +133,23 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {surplusAlerts.map(alert => (
             <div key={alert.id} className="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-black text-amber-400 uppercase tracking-wider bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
                   {alert.event}
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">{alert.postedAt}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-400 font-mono">{alert.postedAt}</span>
+                  {['STAFF', 'ADMIN'].includes(role) && (
+                    <button
+                      type="button"
+                      onClick={() => setSurplusAlerts(prev => prev.filter(item => item.id !== alert.id))}
+                      aria-label={`Remove ${alert.event} meal broadcast`}
+                      className="btn-ghost text-[10px] px-2 py-1"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -121,7 +157,7 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
                 <div className="text-xs text-slate-400 mt-2 space-y-1">
                   <div>📍 <strong>Pickup Spot:</strong> <span className="text-slate-200">{alert.location}</span></div>
                   <div>⏰ <strong>Safe Window:</strong> <span className="text-amber-300 font-semibold">{alert.bestBefore}</span></div>
-                  <div>🎯 <strong>Intended For:</strong> <span className="text-slate-300">{alert.target}</span></div>
+                  <div><strong>Available:</strong> <span className="text-slate-300">{Math.max(0, Number(alert.portions || 0) - Number(alert.reservedPortions || 0))} portions</span></div>
                 </div>
               </div>
 
@@ -139,10 +175,11 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
                 {alert.status === 'ACTIVE' && !claimedItems.has(alert.id) && alert.claimedPct < 100 ? (
                   <button
                     onClick={() => handleClaimSurplus(alert.id)}
-                    aria-label={`Reserve free surplus meal from ${alert.event} and earn 10 EcoCredits`}
-                    className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-md shadow-amber-600/30"
+                    disabled={userCredits < Number(alert.pointsCost ?? 10)}
+                    aria-label={`Reserve a leftover meal from ${alert.event} for ${Number(alert.pointsCost ?? 10)} EcoCredits`}
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow-md shadow-emerald-600/30"
                   >
-                    🍱 Reserve Free Meal (+10 PTS)
+                    Reserve a meal · {Number(alert.pointsCost ?? 10)} pts
                   </button>
                 ) : claimedItems.has(alert.id) ? (
                   <span className="text-xs text-emerald-400 font-bold">✓ Claimed</span>
@@ -154,6 +191,24 @@ export const CafeteriaPage = ({ surplusAlerts, setSurplusAlerts, userCredits, se
           ))}
         </div>
       </div>
+
+      {['STAFF', 'ADMIN'].includes(role) && (
+        <form onSubmit={handleBroadcast} className="cafeteria-broadcast tactile-panel">
+          <div>
+            <h2 className="text-base font-extrabold">Broadcast leftover meals</h2>
+            <p className="text-xs text-slate-400">Students can reserve one available portion by spending the listed EcoCredits.</p>
+          </div>
+          <div className="cafeteria-broadcast-grid">
+            <label>Meal/event<input required value={broadcast.event} onChange={e => setBroadcast(v => ({ ...v, event: e.target.value }))} /></label>
+            <label>Food available<input required value={broadcast.items} onChange={e => setBroadcast(v => ({ ...v, items: e.target.value }))} /></label>
+            <label>Pickup counter<input required value={broadcast.location} onChange={e => setBroadcast(v => ({ ...v, location: e.target.value }))} /></label>
+            <label>Portions<input required type="number" min="1" step="1" value={broadcast.portions} onChange={e => setBroadcast(v => ({ ...v, portions: e.target.value }))} /></label>
+            <label>Points per portion<input required type="number" min="0" step="1" value={broadcast.pointsCost} onChange={e => setBroadcast(v => ({ ...v, pointsCost: e.target.value }))} /></label>
+            <label>Pickup deadline<input value={broadcast.bestBefore} onChange={e => setBroadcast(v => ({ ...v, bestBefore: e.target.value }))} /></label>
+          </div>
+          <button className="btn-eco" type="submit">Publish meal availability</button>
+        </form>
+      )}
 
       {/* Composter & Garden Pipeline Metrics */}
       <div className="bg-slate-900 rounded-2xl p-6 border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-6 shadow-xl">

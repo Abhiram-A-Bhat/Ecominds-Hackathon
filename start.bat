@@ -34,7 +34,7 @@ if not exist "%ROOT%.env" if exist "%ROOT%.env.example" (
 
 echo Starting the API and frontend in separate windows...
 start "Guardian Campus API - Port 8000" /D "%ROOT%" cmd /k ""%VENV_PY%" backend\server.py"
-start "Guardian Campus Web - Port 5173" /D "%ROOT%" cmd /k "npm run dev -- --host 127.0.0.1 --port 5173"
+start "Guardian Campus Web - Port 5173" /D "%ROOT%" cmd /k "npm run dev -- --host 0.0.0.0 --port 5173"
 
 echo Waiting for the frontend to initialize...
 timeout /t 4 /nobreak >nul
@@ -43,6 +43,7 @@ start "" "http://localhost:5173/"
 echo.
 echo Guardian Campus is starting.
 echo Frontend: http://localhost:5173/
+echo Phone QR support: connect the phone and laptop to the same Wi-Fi.
 echo API health: http://127.0.0.1:8000/health
 echo Keep both server windows open while using the app.
 echo Close the API and Web windows to stop the project.

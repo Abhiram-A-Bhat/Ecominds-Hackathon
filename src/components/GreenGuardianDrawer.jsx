@@ -177,11 +177,11 @@ export function GreenGuardianDrawer({ isOpen, onClose }) {
     (!isStudent || !t.assignedStaffId));
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', justifyContent: 'flex-end' }} role="dialog" aria-modal="true" aria-label="Green Guardian missions">
+    <div className="guardian-missions-overlay" style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', justifyContent: 'flex-end' }} role="dialog" aria-modal="true" aria-label="Green Guardian missions">
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(1,6,3,.7)', backdropFilter: 'blur(6px)', animation: 'fadeIn .2s both' }} />
       <div style={{
         position: 'relative', width: '100%', maxWidth: 520, height: '100%', display: 'flex', flexDirection: 'column',
-        background: 'linear-gradient(180deg, rgba(8,22,15,.98), rgba(4,12,8,.99))', borderLeft: '1px solid var(--border-hi)',
+        background: 'var(--surface-solid)', borderLeft: '1px solid var(--border-hi)',
         boxShadow: '-20px 0 60px rgba(0,0,0,.7)', animation: 'drawerInRight .4s var(--ease-out) both',
       }}>
         <header style={{ padding: '20px 22px 14px', borderBottom: '1px solid var(--border)' }}>

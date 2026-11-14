@@ -119,7 +119,7 @@ export const SALVAGED_EWASTE_ITEMS = [
     category: "Actuators & Sensors",
     condition: "Good Condition",
     sourceDept: "IoT Lab Overstock",
-    salvagedBy: "Divyashree S",
+    salvagedBy: "Draupadi",
     status: "Available for Student Checkout",
     creditsCost: 0,
     specs: "Optocoupler isolated, 10A 250VAC",
@@ -143,7 +143,7 @@ export const SALVAGED_EWASTE_ITEMS = [
     category: "Development Boards",
     condition: "Refurbished Pins",
     sourceDept: "CSE Final Year Project",
-    salvagedBy: "Harshitha P",
+    salvagedBy: "Lakshmi",
     status: "Available for Student Checkout",
     creditsCost: 0,
     specs: "NodeMCU form factor, onboard antenna",
@@ -155,7 +155,7 @@ export const SALVAGED_EWASTE_ITEMS = [
     category: "Peripherals & Cables",
     condition: "Functional",
     sourceDept: "Seminar Hall AV Upgrade",
-    salvagedBy: "Kavitha S",
+    salvagedBy: "Vyasa",
     status: "Available for Student Checkout",
     creditsCost: 0,
     specs: "Includes 3.5mm audio bypass line",
@@ -168,7 +168,7 @@ export const PASS_THE_TORCH_ITEMS = [
     id: "PT-101",
     title: "Mini Drafter & Engineering Drawing Board",
     branch: "1st Year / Mech / Civil",
-    donor: "Rahul M. (4th Year ECE)",
+    donor: "Krishna (4th Year ECE)",
     condition: "Like New with padded carrying bag",
     status: "Available",
     category: "Stationery / Tools"
@@ -177,7 +177,7 @@ export const PASS_THE_TORCH_ITEMS = [
     id: "PT-102",
     title: "Casio fx-991EX ClassWiz Calculator",
     branch: "All Engineering Branches",
-    donor: "Ananya K. (Alumni 2025)",
+    donor: "Radha (Alumni 2025)",
     condition: "Minor scratches, new battery installed",
     status: "Available",
     category: "Electronics"
@@ -186,7 +186,7 @@ export const PASS_THE_TORCH_ITEMS = [
     id: "PT-103",
     title: "Chemistry Lab Coat (Cotton, Size 40)",
     branch: "1st Year Engineering",
-    donor: "Purnima S Mittalkod",
+    donor: "Parvati",
     condition: "Washed & Sanitized",
     status: "Available",
     category: "Apparel"
@@ -195,7 +195,7 @@ export const PASS_THE_TORCH_ITEMS = [
     id: "PT-104",
     title: "Core Java & Spring Boot Reference Guide (VTU)",
     branch: "CSE / ISE",
-    donor: "Nayana C P",
+    donor: "Gargi",
     condition: "Clean pages, indexed tabs",
     status: "Reserved",
     category: "Textbooks"
@@ -220,7 +220,7 @@ export const CAMPUS_TREES = [
     id: "TREE-02",
     species: "Neem (Azadirachta indica)",
     location: "ECE Department Herbal Grove",
-    adoptedBy: "Divyashree & Team Eco Minds",
+    adoptedBy: "Draupadi & Team Eco Minds",
     lastWatered: "Yesterday, 05:00 PM",
     health: "Flourishing",
     co2AbsorbedPerYear: "34 kg/yr",
@@ -254,6 +254,51 @@ export const CAMPUS_TREES = [
     waterDueInHours: 22,
     imgTag: "🌱",
     lngLat: [77.5184, 12.9026]
+  },
+  {
+    id: "TREE-05", species: "Neem (Azadirachta indica)", location: "North Gate Road, west verge", adoptedBy: "Campus Grounds",
+    lastWatered: "Today, 07:45 AM", health: "Flourishing", co2AbsorbedPerYear: "34 kg/yr", co2Num: 34, waterDueInHours: 20,
+    imgTag: "🌿", lngLat: [77.5171, 12.9029]
+  },
+  {
+    id: "TREE-06", species: "Indian Laburnum (Cassia fistula)", location: "North Gate Road, east verge", adoptedBy: "Campus Grounds",
+    lastWatered: "Today, 07:50 AM", health: "Excellent", co2AbsorbedPerYear: "24 kg/yr", co2Num: 24, waterDueInHours: 18,
+    imgTag: "🌼", lngLat: [77.5178, 12.9031]
+  },
+  {
+    id: "TREE-07", species: "Champak (Magnolia champaca)", location: "Library Approach Road", adoptedBy: "Campus Grounds",
+    lastWatered: "Yesterday, 05:10 PM", health: "Flourishing", co2AbsorbedPerYear: "30 kg/yr", co2Num: 30, waterDueInHours: 14,
+    imgTag: "🌳", lngLat: [77.5188, 12.9028]
+  },
+  {
+    id: "TREE-08", species: "Rain Tree (Samanea saman)", location: "East Academic Road", adoptedBy: "Campus Grounds",
+    lastWatered: "Today, 08:05 AM", health: "Excellent", co2AbsorbedPerYear: "38 kg/yr", co2Num: 38, waterDueInHours: 21,
+    imgTag: "🌳", lngLat: [77.5195, 12.9022]
+  },
+  {
+    id: "TREE-09", species: "Copper Pod (Peltophorum pterocarpum)", location: "Engineering Block Road", adoptedBy: "Campus Grounds",
+    lastWatered: "Yesterday, 06:00 PM", health: "Flourishing", co2AbsorbedPerYear: "29 kg/yr", co2Num: 29, waterDueInHours: 15,
+    imgTag: "🌳", lngLat: [77.5194, 12.9015]
+  },
+  {
+    id: "TREE-10", species: "Gulmohar (Delonix regia)", location: "Cafeteria Loop Road", adoptedBy: "Campus Grounds",
+    lastWatered: "Today, 08:15 AM", health: "Excellent", co2AbsorbedPerYear: "28 kg/yr", co2Num: 28, waterDueInHours: 19,
+    imgTag: "🌺", lngLat: [77.5187, 12.9010]
+  },
+  {
+    id: "TREE-11", species: "Neem (Azadirachta indica)", location: "Hostel South Loop", adoptedBy: "Campus Grounds",
+    lastWatered: "Today, 07:30 AM", health: "Flourishing", co2AbsorbedPerYear: "34 kg/yr", co2Num: 34, waterDueInHours: 22,
+    imgTag: "🌿", lngLat: [77.5179, 12.9007]
+  },
+  {
+    id: "TREE-12", species: "Indian Beech (Pongamia pinnata)", location: "West Perimeter Road", adoptedBy: "Campus Grounds",
+    lastWatered: "Yesterday, 05:45 PM", health: "Excellent", co2AbsorbedPerYear: "31 kg/yr", co2Num: 31, waterDueInHours: 16,
+    imgTag: "🌳", lngLat: [77.5170, 12.9017]
+  },
+  {
+    id: "TREE-13", species: "Jamun (Syzygium cumini)", location: "South Walkway Roadside", adoptedBy: "Campus Grounds",
+    lastWatered: "Today, 07:55 AM", health: "Flourishing", co2AbsorbedPerYear: "32 kg/yr", co2Num: 32, waterDueInHours: 20,
+    imgTag: "🌳", lngLat: [77.5181, 12.9004]
   }
 ];
 
@@ -263,6 +308,9 @@ export const SURPLUS_FOOD_BROADCASTS = [
     event: "National Conference on AI Luncheon Surplus",
     location: "Auditorium Dining Hall",
     items: "35 portions of Steamed Rice, Dal Makhani, Fresh Chapati & Mix Veg",
+    portions: 35,
+    reservedPortions: 22,
+    pointsCost: 10,
     bestBefore: "Within 45 minutes (Safe warm storage)",
     postedAt: "15 mins ago",
     target: "Campus Support Staff, Security & Students in Project Labs",
@@ -274,6 +322,9 @@ export const SURPLUS_FOOD_BROADCASTS = [
     event: "Hostel Cauvery Evening Mess",
     location: "Hostel Dining Block",
     items: "20 portions of Veg Pulao & Raita",
+    portions: 20,
+    reservedPortions: 20,
+    pointsCost: 10,
     bestBefore: "By 10:00 PM",
     postedAt: "1 hour ago",
     target: "Late Study Groups / Local Night Shelter Volunteer Pick-up",
@@ -333,7 +384,7 @@ export const REWARDS_CATALOG = [
 export const STUDENT_LIFETIME_LEADERBOARD = [
   {
     rank: 1,
-    name: "Sowmyashree S.",
+    name: "Subhadra",
     usn: "1RN22CS078",
     branch: "CSE",
     year: "3rd Year",
@@ -346,7 +397,7 @@ export const STUDENT_LIFETIME_LEADERBOARD = [
   },
   {
     rank: 2,
-    name: "Divyashree S.",
+    name: "Draupadi",
     usn: "1RN22CS045",
     branch: "CSE",
     year: "3rd Year",
@@ -359,7 +410,7 @@ export const STUDENT_LIFETIME_LEADERBOARD = [
   },
   {
     rank: 3,
-    name: "Harshitha P.",
+    name: "Lakshmi",
     usn: "1RN22EC032",
     branch: "ECE",
     year: "3rd Year",
@@ -372,7 +423,7 @@ export const STUDENT_LIFETIME_LEADERBOARD = [
   },
   {
     rank: 4,
-    name: "Abhiram",
+    name: "Arjuna",
     usn: "1RN23IS005",
     branch: "ISE",
     year: "2nd Year",
@@ -411,7 +462,7 @@ export const STUDENT_LIFETIME_LEADERBOARD = [
   },
   {
     rank: 7,
-    name: "Karthik Bhat",
+    name: "Skanda",
     usn: "1RN24CS056",
     branch: "CSE",
     year: "1st Year",
@@ -424,7 +475,7 @@ export const STUDENT_LIFETIME_LEADERBOARD = [
   },
   {
     rank: 8,
-    name: "Priya Nair",
+    name: "Sahadeva",
     usn: "1RN24CS011",
     branch: "CSE",
     year: "1st Year",
@@ -440,7 +491,7 @@ export const STUDENT_LIFETIME_LEADERBOARD = [
 export const STAFF_LIFETIME_LEADERBOARD = [
   {
     rank: 1,
-    name: "Dr. Kavitha S.",
+    name: "Vyasa",
     designation: "NAAC Audit In-Charge & Ecominds Admin",
     department: "CSE",
     lifetimePoints: 7600,
@@ -451,7 +502,7 @@ export const STAFF_LIFETIME_LEADERBOARD = [
   },
   {
     rank: 2,
-    name: "Dr. Nayana C P",
+    name: "Gargi",
     designation: "ECE Lab Head & E-Waste Coordinator",
     department: "ECE",
     lifetimePoints: 6850,
@@ -462,7 +513,7 @@ export const STAFF_LIFETIME_LEADERBOARD = [
   },
   {
     rank: 3,
-    name: "Prof. Purnima S Mittalkod",
+    name: "Prof. Parvati",
     designation: "Faculty Sponsor & Environmental Council",
     department: "Basic Sciences",
     lifetimePoints: 5920,
@@ -473,7 +524,7 @@ export const STAFF_LIFETIME_LEADERBOARD = [
   },
   {
     rank: 4,
-    name: "Ramesh K.",
+    name: "Hanuman",
     designation: "Ground Ops Specialist (Zone 2)",
     department: "Estate & Operations",
     lifetimePoints: 5410,

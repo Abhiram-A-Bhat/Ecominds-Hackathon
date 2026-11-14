@@ -11,7 +11,7 @@ const WHEEL_PRIZES = [
   { label: '+10 Credits', type: 'credits', value: 10, color: '#10b981' },
   { label: '+10 Credits', type: 'credits', value: 10, color: '#065f46' },
   { label: '+30 JACKPOT', type: 'credits', value: 30, color: '#f59e0b' },
-  { label: '+15 Credits', type: 'credits', value: 15, color: '#34d399' },
+  { label: '+15 Credits', type: 'credits', value: 15, color: 'var(--role)' },
   { label: '+15 Credits', type: 'credits', value: 15, color: '#0d9488' },
   { label: '+20 Credits', type: 'credits', value: 20, color: '#14b8a6' },
 ];
@@ -196,7 +196,7 @@ export function GamificationDrawer({
       }}
     >
       <div style={{
-        background: 'rgba(7,15,10,0.96)', border: '1px solid rgba(52,211,153,0.3)',
+        background: 'var(--surface-solid)', border: '1px solid rgba(52,211,153,0.3)',
         borderRadius: 24, maxWidth: 620, width: '100%', maxHeight: '90vh',
         overflow: 'hidden', display: 'flex', flexDirection: 'column',
         boxShadow: '0 25px 60px rgba(0,0,0,0.7), 0 0 40px rgba(52,211,153,0.15)'
@@ -206,12 +206,12 @@ export function GamificationDrawer({
         <div style={{
           padding: '20px 24px', borderBottom: '1px solid rgba(52,211,153,0.12)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'rgba(5,20,12,0.6)'
+          background: 'var(--surface)'
         }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 20 }}>🔥</span>
-              <h2 style={{ fontSize: 18, fontWeight: 900, color: '#e2f5ec', margin: 0, letterSpacing: '-0.02em' }}>
+              <h2 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
                 Ecominds Gamification Hub
               </h2>
               <span style={{
@@ -221,7 +221,7 @@ export function GamificationDrawer({
                 {streakDays}-Day Streak!
               </span>
             </div>
-            <div style={{ fontSize: 11, color: '#7ea893', marginTop: 3 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 3 }}>
               Level {ecoLevel.level} · {ecoLevel.title} • {lifetimePoints.toLocaleString()} lifetime EcoCredits • {userXp.toLocaleString()} bonus XP
             </div>
           </div>
@@ -229,8 +229,8 @@ export function GamificationDrawer({
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)',
-              borderRadius: 12, width: 34, height: 34, color: '#e2f5ec',
+              background: 'var(--role-soft)', border: '1px solid rgba(52,211,153,0.2)',
+              borderRadius: 12, width: 34, height: 34, color: 'var(--text)',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 16, transition: 'all 0.2s'
             }}
@@ -240,12 +240,12 @@ export function GamificationDrawer({
         </div>
 
         {/* Lifetime EcoCredits determine levels and never fall when rewards are redeemed. */}
-        <div style={{ padding: '12px 24px', background: 'rgba(3,13,8,0.5)', borderBottom: '1px solid rgba(52,211,153,0.08)' }}>
+        <div style={{ padding: '12px 24px', background: 'var(--surface)', borderBottom: '1px solid rgba(52,211,153,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>
-            <span style={{ color: '#7ea893' }}>Level {ecoLevel.level} · {ecoLevel.title}</span>
-            <span style={{ color: '#34d399', fontFamily: 'monospace' }}>{ecoLevel.next == null ? 'Max level reached' : `${lifetimePoints.toLocaleString()} / ${ecoLevel.next.toLocaleString()} pts to Level ${ecoLevel.level + 1}`}</span>
+            <span style={{ color: 'var(--text-2)' }}>Level {ecoLevel.level} · {ecoLevel.title}</span>
+            <span style={{ color: 'var(--role)', fontFamily: 'monospace' }}>{ecoLevel.next == null ? 'Max level reached' : `${lifetimePoints.toLocaleString()} / ${ecoLevel.next.toLocaleString()} pts to Level ${ecoLevel.level + 1}`}</span>
           </div>
-          <div style={{ width: '100%', height: 7, borderRadius: 99, background: 'rgba(52,211,153,0.1)', overflow: 'hidden' }}>
+          <div style={{ width: '100%', height: 7, borderRadius: 99, background: 'var(--role-soft)', overflow: 'hidden' }}>
             <div style={{
               width: `${ecoLevel.progress}%`, height: '100%',
               background: '#059669',
@@ -257,7 +257,7 @@ export function GamificationDrawer({
         {/* Tab Switcher */}
         <div style={{
           display: 'flex', gap: 6, padding: '12px 24px',
-          borderBottom: '1px solid rgba(52,211,153,0.08)', background: 'rgba(5,15,10,0.4)'
+          borderBottom: '1px solid rgba(52,211,153,0.08)', background: 'var(--surface)'
         }}>
           {[
             { id: 'quests', label: `🎯 Daily Quests (${completedCount}/4)` },
@@ -271,7 +271,7 @@ export function GamificationDrawer({
                 flex: 1, padding: '8px 12px', borderRadius: 12,
                 fontSize: 12, fontWeight: 800, cursor: 'pointer',
                 background: activeTab === t.id ? 'rgba(52,211,153,0.18)' : 'transparent',
-                color: activeTab === t.id ? '#34d399' : '#7ea893',
+                color: activeTab === t.id ? 'var(--role)' : 'var(--text-2)',
                 border: activeTab === t.id ? '1px solid rgba(52,211,153,0.3)' : '1px solid transparent',
                 transition: 'all 0.2s'
               }}
@@ -288,15 +288,15 @@ export function GamificationDrawer({
           {activeTab === 'quests' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: '#7ea893' }}>Complete all daily missions for a +50 EcoCredits bonus!</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#34d399' }}>Resets at Midnight</span>
+                <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Complete all daily missions for a +50 EcoCredits bonus!</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--role)' }}>Resets at Midnight</span>
               </div>
 
               {quests.map(q => (
                 <div
                   key={q.id}
                   style={{
-                    background: q.completed ? 'rgba(52,211,153,0.06)' : 'rgba(10,25,18,0.7)',
+                    background: q.completed ? 'var(--role-soft)' : 'var(--surface)',
                     border: q.completed ? '1px solid rgba(52,211,153,0.2)' : '1px solid rgba(52,211,153,0.12)',
                     borderRadius: 16, padding: '14px 18px', display: 'flex', alignItems: 'center',
                     justifyContent: 'space-between', gap: 12, transition: 'all 0.2s'
@@ -307,14 +307,14 @@ export function GamificationDrawer({
                     <div>
                       <div style={{
                         fontSize: 13, fontWeight: 800,
-                        color: q.completed ? '#7ea893' : '#e2f5ec',
+                        color: q.completed ? 'var(--text-2)' : 'var(--text)',
                         textDecoration: q.completed ? 'line-through' : 'none'
                       }}>
                         {q.title}
                       </div>
-                      <div style={{ fontSize: 11, color: '#7ea893', marginTop: 2 }}>{q.desc}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-2)', marginTop: 2 }}>{q.desc}</div>
                       <div style={{ display: 'flex', gap: 8, marginTop: 5, fontSize: 10, fontFamily: 'monospace' }}>
-                        <span style={{ color: '#34d399', fontWeight: 700 }}>+{q.credits} Credits</span>
+                        <span style={{ color: 'var(--role)', fontWeight: 700 }}>+{q.credits} Credits</span>
                         <span style={{ color: '#60a5fa' }}>+{q.xp} XP</span>
                       </div>
                     </div>
@@ -323,8 +323,8 @@ export function GamificationDrawer({
                   {q.completed ? (
                     <span style={{
                       display: 'flex', alignItems: 'center', gap: 4,
-                      color: '#34d399', fontSize: 11, fontWeight: 800,
-                      background: 'rgba(52,211,153,0.1)', padding: '5px 12px',
+                      color: 'var(--role)', fontSize: 11, fontWeight: 800,
+                      background: 'var(--role-soft)', padding: '5px 12px',
                       borderRadius: 10, border: '1px solid rgba(52,211,153,0.25)'
                     }}>
                       ✓ Done
@@ -354,27 +354,12 @@ export function GamificationDrawer({
           {activeTab === 'wheel' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
               <div style={{ textAlign: 'center' }}>
-                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#e2f5ec', margin: 0 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', margin: 0 }}>
                   🎡 Daily RNSIT Eco-Wheel of Fortune
                 </h3>
-                <p style={{ fontSize: 11, color: '#7ea893', margin: '4px 0 0' }}>
-                  One spin per day. Every wheel segment awards EcoCredits; prize odds are shown below.
+                <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '4px 0 0' }}>
+                  One spin per day. Every wheel segment awards EcoCredits.
                 </p>
-              </div>
-
-              <div aria-label="Eco-Wheel prize odds" style={{ width: '100%', maxWidth: 430, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 7 }}>
-                {[
-                  { label: '+5 EcoCredits', odds: '12.5%', color: '#059669' },
-                  { label: '+10 EcoCredits', odds: '37.5%', color: '#10b981' },
-                  { label: '+15 EcoCredits', odds: '25%', color: '#34d399' },
-                  { label: '+20 EcoCredits', odds: '12.5%', color: '#14b8a6' },
-                  { label: '+30 EcoCredits', odds: '12.5%', color: '#f59e0b' },
-                ].map(prize => (
-                  <div key={prize.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '7px 9px', border: `1px solid ${prize.color}55`, borderRadius: 9, background: `${prize.color}16`, fontSize: 10.5 }}>
-                    <span style={{ color: '#e2f5ec', fontWeight: 800 }}>{prize.label}</span>
-                    <span style={{ color: prize.color, fontWeight: 900 }}>{prize.odds}</span>
-                  </div>
-                ))}
               </div>
 
               {/* Wheel Container with Pointer */}
@@ -393,34 +378,39 @@ export function GamificationDrawer({
                 <div style={{
                   width: '100%', height: '100%', borderRadius: '50%',
                   border: '6px solid rgba(52,211,153,0.4)',
+                  background: `conic-gradient(${WHEEL_PRIZES.map((prize, idx) => `${prize.color} ${idx * (360 / WHEEL_PRIZES.length)}deg ${(idx + 1) * (360 / WHEEL_PRIZES.length)}deg`).join(', ')})`,
                   position: 'relative', overflow: 'hidden',
                   transform: `rotate(${wheelRotation}deg)`,
                   transition: spinning ? 'transform 4s cubic-bezier(0.15, 0.9, 0.2, 1)' : 'none',
                   boxShadow: '0 0 30px rgba(52,211,153,0.2)'
                 }}>
                   {WHEEL_PRIZES.map((prize, idx) => {
-                    const angle = (360 / WHEEL_PRIZES.length) * idx;
+                    const midAngle = ((idx + 0.5) * 360 / WHEEL_PRIZES.length) * Math.PI / 180;
+                    const left = 50 + Math.sin(midAngle) * 31;
+                    const top = 50 - Math.cos(midAngle) * 31;
                     return (
                       <div
                         key={idx}
                         style={{
-                          position: 'absolute', width: '50%', height: '50%',
-                          top: 0, right: 0, transformOrigin: '0% 100%',
-                          transform: `rotate(${angle}deg) skewY(${90 - (360 / WHEEL_PRIZES.length)}deg)`,
-                          background: prize.color,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#ffffff', fontSize: 9, fontWeight: 800,
-                          userSelect: 'none'
+                          position: 'absolute', left: `${left}%`, top: `${top}%`,
+                          transform: 'translate(-50%, -50%)', width: 53,
+                          display: 'grid', justifyItems: 'center', gap: 1,
+                          color: '#ffffff', fontSize: 10, lineHeight: 1.05, fontWeight: 900,
+                          textAlign: 'center', textShadow: '0 1px 3px rgba(0,0,0,.75)',
+                          userSelect: 'none', pointerEvents: 'none'
                         }}
-                      />
+                      >
+                        <span>+{prize.value}</span>
+                        <span style={{ fontSize: 7, letterSpacing: '.04em' }}>{prize.label.toUpperCase().includes('JACKPOT') ? 'JACKPOT' : 'CREDITS'}</span>
+                      </div>
                     );
                   })}
                   {/* Wheel center hub */}
                   <div style={{
                     position: 'absolute', inset: '38%', borderRadius: '50%',
-                    background: '#030d08', border: '3px solid #34d399',
+                    background: 'var(--surface-solid)', border: '3px solid #34d399',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 16, zIndex: 5, color: '#34d399', fontWeight: 900
+                    fontSize: 16, zIndex: 5, color: 'var(--role)', fontWeight: 900
                   }}>
                     🌿
                   </div>
@@ -430,14 +420,14 @@ export function GamificationDrawer({
               {/* Prize Announcement */}
               {wonPrize && (
                 <div style={{
-                  background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.35)',
+                  background: 'var(--role-soft)', border: '1px solid rgba(52,211,153,0.35)',
                   padding: '10px 20px', borderRadius: 14, textAlign: 'center',
                   animation: 'fadeIn 0.4s ease-out'
                 }}>
-                  <div style={{ fontSize: 10, color: '#7ea893', textTransform: 'uppercase', fontWeight: 700 }}>
+                  <div style={{ fontSize: 10, color: 'var(--text-2)', textTransform: 'uppercase', fontWeight: 700 }}>
                     Congratulations! You won:
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: '#34d399', marginTop: 2 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--role)', marginTop: 2 }}>
                     {wonPrize.label}
                   </div>
                 </div>
@@ -449,9 +439,9 @@ export function GamificationDrawer({
                 aria-label={spinning ? 'Wheel is spinning' : hasSpunToday ? 'Come back tomorrow to spin again' : 'Spin the Eco-Wheel to win credits'}
                 style={{
                   background: hasSpunToday
-                    ? 'rgba(52,211,153,0.2)'
+                    ? 'var(--role-line)'
                     : '#059669',
-                  color: hasSpunToday ? '#7ea893' : '#ffffff',
+                  color: hasSpunToday ? 'var(--text-2)' : '#ffffff',
                   fontWeight: 900, fontSize: 13, padding: '12px 32px',
                   borderRadius: 14, border: 'none',
                   cursor: spinning || hasSpunToday ? 'not-allowed' : 'pointer',
@@ -472,7 +462,7 @@ export function GamificationDrawer({
                 <div
                   key={b.id}
                   style={{
-                    background: b.unlocked ? 'rgba(52,211,153,0.06)' : 'rgba(10,20,15,0.4)',
+                    background: b.unlocked ? 'var(--role-soft)' : 'rgba(10,20,15,0.4)',
                     border: b.unlocked ? '1px solid rgba(52,211,153,0.25)' : '1px solid rgba(255,255,255,0.05)',
                     borderRadius: 16, padding: '14px 16px', display: 'flex',
                     alignItems: 'center', gap: 12, opacity: b.unlocked ? 1 : 0.55
@@ -481,14 +471,14 @@ export function GamificationDrawer({
                   <span style={{ fontSize: 28, filter: b.unlocked ? 'none' : 'grayscale(1)' }}>{b.icon}</span>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: b.unlocked ? '#e2f5ec' : '#7ea893' }}>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: b.unlocked ? 'var(--text)' : 'var(--text-2)' }}>
                         {b.name}
                       </span>
                       {b.unlocked && (
-                        <span style={{ fontSize: 9, color: '#34d399', fontWeight: 800 }}>✓ UNLOCKED</span>
+                        <span style={{ fontSize: 9, color: 'var(--role)', fontWeight: 800 }}>✓ UNLOCKED</span>
                       )}
                     </div>
-                    <div style={{ fontSize: 10, color: '#7ea893', marginTop: 2 }}>{b.desc}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-2)', marginTop: 2 }}>{b.desc}</div>
                   </div>
                 </div>
               ))}

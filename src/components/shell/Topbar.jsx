@@ -55,6 +55,7 @@ function InterfaceSwitcher() {
   const { currentUser, login } = useAuth();
   const { navigate } = useRouter();
   const [open, setOpen] = useState(false);
+  const [switchError, setSwitchError] = useState('');
   const ref = useRef(null);
 
   useEffect(() => {
@@ -67,23 +68,32 @@ function InterfaceSwitcher() {
   }, [open]);
 
   const go = (acc) => {
+    const signedIn = login(acc.id, acc.pw);
+    if (!signedIn) {
+      setSwitchError(`Could not switch to ${acc.name}. Please reopen the menu and try again.`);
+      return;
+    }
+    setSwitchError('');
     setOpen(false);
-    if (login(acc.id, acc.pw)) { navigate('/'); window.scrollTo({ top: 0, behavior: 'instant' }); }
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button type="button" className="tb-btn" onClick={() => setOpen(o => !o)} aria-haspopup="menu" aria-expanded={open} title="Switch interface (demo)">
-        <Repeat2 size={15} /> <span className="hide-md">Switch</span>
+      <button type="button" className="tb-btn" onClick={() => { setSwitchError(''); setOpen(o => !o); }} aria-haspopup="menu" aria-expanded={open} aria-label="Change role" title="Change role (demo)">
+        <Repeat2 size={15} /> <span className="hide-md">Change role</span>
       </button>
       {open && (
         <div className="menu-pop iface-menu" role="menu">
           <div className="eyebrow" style={{ padding: '6px 10px 8px' }}>Jump to another interface</div>
+          {switchError && <div role="alert" style={{ padding: '8px 10px', color: 'var(--red)', fontSize: 11.5, fontWeight: 700 }}>{switchError}</div>}
           {INTERFACES.map((it, gi) => (
             <div key={it.role} style={{ padding: '4px 0', borderTop: gi ? '1px solid var(--border)' : 0, animation: `revealRight .3s var(--ease-out) ${gi * 0.05}s backwards` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px 4px', fontSize: 11.5, fontWeight: 800, color: it.color }}>
-                <it.icon size={13} /> {it.title} <span style={{ color: 'var(--text-3)', fontWeight: 700 }}>· {it.who}</span>
-              </div>
+              <button type="button" className="iface-role-option" onClick={() => go(it.accounts[0])} role="menuitem" aria-label={`Switch to ${it.title} role`}>
+                <it.icon size={14} /> <span>{it.title}</span> <span className="iface-role-who">· {it.who}</span>
+                <span className="iface-role-action">Switch</span>
+              </button>
               {it.accounts.map(acc => {
                 const here = currentUser && (currentUser.usn === acc.id || currentUser.username === acc.id);
                 return (
@@ -157,8 +167,8 @@ export function Topbar({ userCredits, onOpenSearch, onOpenGamification, onOpenAc
         <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 0', overflow: 'hidden', animation: 'revealLeft .45s var(--ease-out) backwards' }}>
           <span className="hide-sm" style={{
             width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: 'grid', placeItems: 'center',
-            color: route.accent, background: `${route.accent}1f`, border: `1px solid ${route.accent}40`,
-            boxShadow: `0 0 20px -6px ${route.accent}`,
+            color: 'var(--role-hi)', background: 'var(--role-soft)', border: '1px solid var(--role-line)',
+            boxShadow: 'var(--shadow-button-inset)',
           }}>
             {Icon && <Icon size={15} strokeWidth={2.3} />}
           </span>

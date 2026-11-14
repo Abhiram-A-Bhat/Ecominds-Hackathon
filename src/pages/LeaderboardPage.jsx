@@ -26,12 +26,12 @@ const DarkTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: '#040d07',
+      background: 'var(--surface-solid)',
       border: '1px solid rgba(52,211,153,0.25)',
       borderRadius: 10,
       padding: '8px 14px',
       fontSize: 12,
-      color: '#e2f5ec',
+      color: 'var(--text)',
       boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
     }}>
       <div style={{ color: '#34d399', fontWeight: 800, marginBottom: 4 }}>{label}</div>
@@ -64,7 +64,7 @@ export const LeaderboardPage = ({ userCredits }) => {
     if (credits >= 1000) return { title: '🏆 Eco Champion', color: '#facc15', desc: 'Top 1% campus sustainability leaders' };
     if (credits >= 500) return { title: '⭐ Green Guardian', color: '#34d399', desc: 'Active student circular eco-ambassador' };
     if (credits >= 200) return { title: '🌱 Eco Starter', color: '#86efac', desc: 'Consistent recycler & contributor' };
-    return { title: '🌿 Green Seedling', color: '#7ea893', desc: 'Starting your sustainability journey' };
+    return { title: '🌿 Green Seedling', color: 'var(--text-2)', desc: 'Starting your sustainability journey' };
   };
 
   const userRank = getUserRank(userCredits);
@@ -122,7 +122,7 @@ export const LeaderboardPage = ({ userCredits }) => {
       {/* Toast Alert */}
       {toast && (
         <div style={{
-          background: '#1a1005',
+          background: 'color-mix(in srgb, var(--amber) 12%, var(--surface))',
           border: '1px solid rgba(245,158,11,0.4)',
           color: '#fef3c7',
           padding: '12px 16px',
@@ -156,13 +156,13 @@ export const LeaderboardPage = ({ userCredits }) => {
           <h1 style={{ fontSize: 24, fontWeight: 900, color: '#ffffff', margin: '4px 0 2px' }}>
             🏆 Campus Sustainability Hall of Fame
           </h1>
-          <p style={{ fontSize: 12, color: '#7ea893', margin: 0 }}>
+          <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0 }}>
             Official RNSIT Lifetime Leaderboards for students, faculty &amp; staff, and campus department standings.
           </p>
         </div>
 
         <div style={{
-          background: '#07160e',
+          background: 'var(--surface)',
           border: '1px solid rgba(52,211,153,0.28)',
           borderRadius: 14,
           padding: '8px 16px',
@@ -200,8 +200,8 @@ export const LeaderboardPage = ({ userCredits }) => {
         <button
           onClick={() => setActiveTab('STUDENTS')}
           style={{
-            background: activeTab === 'STUDENTS' ? '#059669' : '#07160e',
-            color: activeTab === 'STUDENTS' ? '#ffffff' : '#7ea893',
+            background: activeTab === 'STUDENTS' ? '#059669' : 'var(--surface)',
+            color: activeTab === 'STUDENTS' ? '#ffffff' : 'var(--text-2)',
             border: activeTab === 'STUDENTS' ? '1px solid #059669' : '1px solid rgba(52,211,153,0.15)',
             borderRadius: 99,
             padding: '8px 18px',
@@ -217,7 +217,7 @@ export const LeaderboardPage = ({ userCredits }) => {
           <span>👨‍🎓</span>
           <span>Students Lifetime</span>
           <span style={{
-            background: activeTab === 'STUDENTS' ? 'rgba(0,0,0,0.3)' : 'rgba(52,211,153,0.12)',
+            background: activeTab === 'STUDENTS' ? 'rgba(0,0,0,0.3)' : 'var(--role-line)',
             color: activeTab === 'STUDENTS' ? '#ffffff' : '#34d399',
             fontSize: 11,
             padding: '1px 6px',
@@ -230,8 +230,8 @@ export const LeaderboardPage = ({ userCredits }) => {
         <button
           onClick={() => setActiveTab('STAFF')}
           style={{
-            background: activeTab === 'STAFF' ? '#059669' : '#07160e',
-            color: activeTab === 'STAFF' ? '#ffffff' : '#7ea893',
+            background: activeTab === 'STAFF' ? '#059669' : 'var(--surface)',
+            color: activeTab === 'STAFF' ? '#ffffff' : 'var(--text-2)',
             border: activeTab === 'STAFF' ? '1px solid #059669' : '1px solid rgba(52,211,153,0.15)',
             borderRadius: 99,
             padding: '8px 18px',
@@ -247,7 +247,7 @@ export const LeaderboardPage = ({ userCredits }) => {
           <span>👩‍🏫</span>
           <span>Faculty &amp; Staff Lifetime</span>
           <span style={{
-            background: activeTab === 'STAFF' ? 'rgba(0,0,0,0.3)' : 'rgba(52,211,153,0.12)',
+            background: activeTab === 'STAFF' ? 'rgba(0,0,0,0.3)' : 'var(--role-line)',
             color: activeTab === 'STAFF' ? '#ffffff' : '#34d399',
             fontSize: 11,
             padding: '1px 6px',
@@ -260,8 +260,8 @@ export const LeaderboardPage = ({ userCredits }) => {
         <button
           onClick={() => setActiveTab('DEPARTMENTS')}
           style={{
-            background: activeTab === 'DEPARTMENTS' ? '#059669' : '#07160e',
-            color: activeTab === 'DEPARTMENTS' ? '#ffffff' : '#7ea893',
+            background: activeTab === 'DEPARTMENTS' ? '#059669' : 'var(--surface)',
+            color: activeTab === 'DEPARTMENTS' ? '#ffffff' : 'var(--text-2)',
             border: activeTab === 'DEPARTMENTS' ? '1px solid #059669' : '1px solid rgba(52,211,153,0.15)',
             borderRadius: 99,
             padding: '8px 18px',
@@ -281,8 +281,8 @@ export const LeaderboardPage = ({ userCredits }) => {
         <button
           onClick={() => setActiveTab('REWARDS')}
           style={{
-            background: activeTab === 'REWARDS' ? '#059669' : '#07160e',
-            color: activeTab === 'REWARDS' ? '#ffffff' : '#7ea893',
+            background: activeTab === 'REWARDS' ? '#059669' : 'var(--surface)',
+            color: activeTab === 'REWARDS' ? '#ffffff' : 'var(--text-2)',
             border: activeTab === 'REWARDS' ? '1px solid #059669' : '1px solid rgba(52,211,153,0.15)',
             borderRadius: 99,
             padding: '8px 18px',
@@ -321,7 +321,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                 <div
                   key={stu.usn}
                   style={{
-                    background: '#07160e',
+                    background: 'var(--surface)',
                     border: `1px solid ${borderColors[idx]}55`,
                     borderRadius: 18,
                     padding: 20,
@@ -345,14 +345,14 @@ export const LeaderboardPage = ({ userCredits }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                     <div style={{
                       width: 48, height: 48, borderRadius: 14,
-                      background: '#0b2317', border: '1px solid rgba(52,211,153,0.3)',
+                      background: 'var(--surface-hi)', border: '1px solid rgba(52,211,153,0.3)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24
                     }}>
                       {stu.avatar}
                     </div>
                     <div>
                       <div style={{ fontSize: 16, fontWeight: 900, color: '#ffffff' }}>{stu.name}</div>
-                      <div style={{ fontSize: 11, color: '#7ea893', fontFamily: 'JetBrains Mono, monospace' }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'JetBrains Mono, monospace' }}>
                         {stu.usn} · {stu.branch}
                       </div>
                     </div>
@@ -361,22 +361,22 @@ export const LeaderboardPage = ({ userCredits }) => {
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
                     gap: 8,
-                    background: '#040d07',
+                    background: 'var(--surface-solid)',
                     border: '1px solid rgba(52,211,153,0.1)',
                     borderRadius: 12,
                     padding: 10,
                     marginTop: 10
                   }}>
                     <div>
-                      <div style={{ fontSize: 10, color: '#7ea893', textTransform: 'uppercase' }}>Lifetime Pts</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-2)', textTransform: 'uppercase' }}>Lifetime Pts</div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: '#34d399', fontFamily: 'JetBrains Mono, monospace' }}>
                         {stu.lifetimePoints.toLocaleString()}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 10, color: '#7ea893', textTransform: 'uppercase' }}>Missions</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-2)', textTransform: 'uppercase' }}>Missions</div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: '#ffffff' }}>
-                        {stu.tasksCompleted} <span style={{ fontSize: 11, color: '#7ea893' }}>done</span>
+                        {stu.tasksCompleted} <span style={{ fontSize: 11, color: 'var(--text-2)' }}>done</span>
                       </div>
                     </div>
                   </div>
@@ -391,7 +391,7 @@ export const LeaderboardPage = ({ userCredits }) => {
 
           {/* Full Students Table */}
           <div style={{
-            background: '#07160e',
+            background: 'var(--surface)',
             border: '1px solid rgba(52,211,153,0.18)',
             borderRadius: 18,
             overflow: 'hidden',
@@ -402,7 +402,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                 <h3 style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', margin: 0 }}>
                   All-Time Top Student Green Guardians
                 </h3>
-                <p style={{ fontSize: 11, color: '#7ea893', margin: '2px 0 0' }}>
+                <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '2px 0 0' }}>
                   Ranked by cumulative lifetime sustainability points earned across all campus years.
                 </p>
               </div>
@@ -414,7 +414,7 @@ export const LeaderboardPage = ({ userCredits }) => {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: '#040d07', borderBottom: '1px solid rgba(52,211,153,0.12)', color: '#7ea893' }}>
+                  <tr style={{ background: 'var(--surface-solid)', borderBottom: '1px solid rgba(52,211,153,0.12)', color: 'var(--text-2)' }}>
                     <th style={{ padding: '12px 16px', fontWeight: 700 }}>Rank</th>
                     <th style={{ padding: '12px 16px', fontWeight: 700 }}>Student</th>
                     <th style={{ padding: '12px 16px', fontWeight: 700 }}>USN / Branch</th>
@@ -441,7 +441,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                             display: 'inline-block',
                             width: 24, height: 24, borderRadius: 6,
                             textAlign: 'center', lineHeight: '24px',
-                            background: stu.rank <= 3 ? '#059669' : '#0b2317',
+                            background: stu.rank <= 3 ? '#059669' : 'var(--surface-hi)',
                             color: '#ffffff', fontSize: 11
                           }}>
                             #{stu.rank}
@@ -454,7 +454,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                               <div style={{ fontWeight: 800, color: '#ffffff' }}>
                                 {stu.name} {isSelf && <span style={{ color: '#34d399', fontSize: 10, marginLeft: 4 }}>(You)</span>}
                               </div>
-                              <div style={{ fontSize: 10, color: '#7ea893' }}>Level {stu.level} • {stu.year}</div>
+                              <div style={{ fontSize: 10, color: 'var(--text-2)' }}>Level {stu.level} • {stu.year}</div>
                             </div>
                           </div>
                         </td>
@@ -473,10 +473,10 @@ export const LeaderboardPage = ({ userCredits }) => {
                             {stu.badge}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 16px', color: '#e2f5ec', fontWeight: 700 }}>
+                        <td style={{ padding: '12px 16px', color: 'var(--text)', fontWeight: 700 }}>
                           {stu.tasksCompleted}
                         </td>
-                        <td style={{ padding: '12px 16px', color: '#7ea893' }}>
+                        <td style={{ padding: '12px 16px', color: 'var(--text-2)' }}>
                           {stu.carbonSavedKg} kg
                         </td>
                         <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 900, fontSize: 14, color: '#34d399', fontFamily: 'JetBrains Mono, monospace' }}>
@@ -502,7 +502,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                 <div
                   key={staff.name}
                   style={{
-                    background: '#07160e',
+                    background: 'var(--surface)',
                     border: '1px solid rgba(139,92,246,0.35)',
                     borderRadius: 18,
                     padding: 20,
@@ -525,7 +525,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                     <div style={{
                       width: 48, height: 48, borderRadius: 14,
-                      background: '#160d2b', border: '1px solid rgba(168,85,247,0.35)',
+                      background: 'color-mix(in srgb, var(--violet) 12%, var(--surface))', border: '1px solid rgba(168,85,247,0.35)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24
                     }}>
                       {staff.avatar}
@@ -544,21 +544,21 @@ export const LeaderboardPage = ({ userCredits }) => {
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
                     gap: 8,
-                    background: '#040d07',
+                    background: 'var(--surface-solid)',
                     border: '1px solid rgba(52,211,153,0.1)',
                     borderRadius: 12,
                     padding: 10
                   }}>
                     <div>
-                      <div style={{ fontSize: 10, color: '#7ea893', textTransform: 'uppercase' }}>Lifetime Pts</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-2)', textTransform: 'uppercase' }}>Lifetime Pts</div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: '#34d399', fontFamily: 'JetBrains Mono, monospace' }}>
                         {staff.lifetimePoints.toLocaleString()}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 10, color: '#7ea893', textTransform: 'uppercase' }}>Energy Saved</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-2)', textTransform: 'uppercase' }}>Energy Saved</div>
                       <div style={{ fontSize: 16, fontWeight: 900, color: '#ffffff' }}>
-                        {staff.energySavedKwh} <span style={{ fontSize: 11, color: '#7ea893' }}>kWh</span>
+                        {staff.energySavedKwh} <span style={{ fontSize: 11, color: 'var(--text-2)' }}>kWh</span>
                       </div>
                     </div>
                   </div>
@@ -568,7 +568,7 @@ export const LeaderboardPage = ({ userCredits }) => {
           </div>
 
           <div style={{
-            background: '#07160e',
+            background: 'var(--surface)',
             border: '1px solid rgba(52,211,153,0.18)',
             borderRadius: 18,
             overflow: 'hidden',
@@ -578,7 +578,7 @@ export const LeaderboardPage = ({ userCredits }) => {
               <h3 style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', margin: 0 }}>
                 Faculty, Technical Officers &amp; Staff Lifetime Ranks
               </h3>
-              <p style={{ fontSize: 11, color: '#7ea893', margin: '2px 0 0' }}>
+              <p style={{ fontSize: 11, color: 'var(--text-2)', margin: '2px 0 0' }}>
                 Points accrued through NAAC green audit verifications, Guardian-led manual power switch-offs, and e-waste batch certifications.
               </p>
             </div>
@@ -586,7 +586,7 @@ export const LeaderboardPage = ({ userCredits }) => {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: '#040d07', borderBottom: '1px solid rgba(52,211,153,0.12)', color: '#7ea893' }}>
+                  <tr style={{ background: 'var(--surface-solid)', borderBottom: '1px solid rgba(52,211,153,0.12)', color: 'var(--text-2)' }}>
                     <th style={{ padding: '12px 16px', fontWeight: 700 }}>Rank</th>
                     <th style={{ padding: '12px 16px', fontWeight: 700 }}>Faculty / Staff Member</th>
                     <th style={{ padding: '12px 16px', fontWeight: 700 }}>Department</th>
@@ -615,11 +615,11 @@ export const LeaderboardPage = ({ userCredits }) => {
                           <span style={{ fontSize: 20 }}>{staff.avatar}</span>
                           <div>
                             <div style={{ fontWeight: 800, color: '#ffffff' }}>{staff.name}</div>
-                            <div style={{ fontSize: 10, color: '#7ea893' }}>{staff.designation}</div>
+                            <div style={{ fontSize: 10, color: 'var(--text-2)' }}>{staff.designation}</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '12px 16px', color: '#e2f5ec', fontWeight: 700 }}>
+                      <td style={{ padding: '12px 16px', color: 'var(--text)', fontWeight: 700 }}>
                         {staff.department}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
@@ -634,7 +634,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                           {staff.badge}
                         </span>
                       </td>
-                      <td style={{ padding: '12px 16px', color: '#e2f5ec', fontWeight: 700 }}>
+                      <td style={{ padding: '12px 16px', color: 'var(--text)', fontWeight: 700 }}>
                         {staff.auditsApproved}
                       </td>
                       <td style={{ padding: '12px 16px', color: '#34d399', fontWeight: 700 }}>
@@ -656,7 +656,7 @@ export const LeaderboardPage = ({ userCredits }) => {
       {activeTab === 'DEPARTMENTS' && (
         <div className="space-y-6">
           <div style={{
-            background: '#07160e',
+            background: 'var(--surface)',
             border: '1px solid rgba(52,211,153,0.18)',
             borderRadius: 18,
             padding: 24,
@@ -673,8 +673,8 @@ export const LeaderboardPage = ({ userCredits }) => {
                 </h2>
               </div>
               <span style={{
-                fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: '#7ea893',
-                background: '#040d07', padding: '4px 10px', borderRadius: 8, border: '1px solid rgba(52,211,153,0.15)'
+                fontSize: 11, fontFamily: 'JetBrains Mono, monospace', color: 'var(--text-2)',
+                background: 'var(--surface-solid)', padding: '4px 10px', borderRadius: 8, border: '1px solid rgba(52,211,153,0.15)'
               }}>
                 Monthly Cycle • AY 2025-26
               </span>
@@ -684,8 +684,8 @@ export const LeaderboardPage = ({ userCredits }) => {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(52,211,153,0.07)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: '#7ea893', fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#7ea893', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="name" tick={{ fill: 'var(--text-2)', fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: 'var(--text-2)', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<DarkTooltip />} />
                   <Bar dataKey="points" name="EcoCredits" radius={[8, 8, 0, 0]}>
                     {chartData.map((entry, index) => (
@@ -698,7 +698,7 @@ export const LeaderboardPage = ({ userCredits }) => {
           </div>
 
           <div style={{
-            background: '#07160e',
+            background: 'var(--surface)',
             border: '1px solid rgba(52,211,153,0.18)',
             borderRadius: 18,
             padding: 20
@@ -711,7 +711,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                 <div
                   key={dept.rank}
                   style={{
-                    background: '#040d07',
+                    background: 'var(--surface-solid)',
                     border: '1px solid rgba(52,211,153,0.12)',
                     borderRadius: 12,
                     padding: 14,
@@ -734,7 +734,7 @@ export const LeaderboardPage = ({ userCredits }) => {
                     </span>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 800, color: '#ffffff' }}>{dept.dept}</div>
-                      <div style={{ fontSize: 10, color: '#7ea893' }}>
+                      <div style={{ fontSize: 10, color: 'var(--text-2)' }}>
                         {dept.wasteDivertedKg} kg waste • {dept.eWasteKg} kg e-waste
                       </div>
                     </div>
@@ -833,7 +833,7 @@ export const LeaderboardPage = ({ userCredits }) => {
           padding: 16
         }}>
           <div style={{
-            background: '#07160e',
+            background: 'var(--surface)',
             border: '1px solid rgba(52,211,153,0.4)',
             borderRadius: 24,
             padding: 24,
@@ -848,7 +848,7 @@ export const LeaderboardPage = ({ userCredits }) => {
               fontSize: 10,
               fontWeight: 800,
               color: '#34d399',
-              background: 'rgba(52,211,153,0.12)',
+              background: 'var(--role-line)',
               border: '1px solid rgba(52,211,153,0.25)',
               padding: '2px 8px',
               borderRadius: 99,
@@ -862,13 +862,13 @@ export const LeaderboardPage = ({ userCredits }) => {
             </h3>
 
             <div style={{
-              background: '#040d07',
+              background: 'var(--surface-solid)',
               border: '1px dashed rgba(52,211,153,0.4)',
               borderRadius: 14,
               padding: 16,
               marginBottom: 16
             }}>
-              <div style={{ fontSize: 10, color: '#7ea893', textTransform: 'uppercase' }}>Present code at counter</div>
+              <div style={{ fontSize: 10, color: 'var(--text-2)', textTransform: 'uppercase' }}>Present code at counter</div>
               <div style={{ fontSize: 20, fontWeight: 900, color: '#34d399', fontFamily: 'JetBrains Mono, monospace', margin: '6px 0' }}>
                 {activeVoucher.code}
               </div>
@@ -877,8 +877,8 @@ export const LeaderboardPage = ({ userCredits }) => {
               </div>
             </div>
 
-            <p style={{ fontSize: 11, color: '#7ea893', lineHeight: 1.5, marginBottom: 16 }}>
-              Show this code at: <strong style={{ color: '#e2f5ec' }}>{activeVoucher.reward.where || 'the counter'}</strong>. Also saved under My Profile → rewards.
+            <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5, marginBottom: 16 }}>
+              Show this code at: <strong style={{ color: 'var(--text)' }}>{activeVoucher.reward.where || 'the counter'}</strong>. Also saved under My Profile → rewards.
             </p>
 
             <button

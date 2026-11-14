@@ -180,7 +180,7 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
 
       {/* User + collapse */}
       <div className={`sb-footer ${collapsed ? 'is-collapsed' : ''}`} style={{ borderTop: '1px solid var(--border)', padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexDirection: collapsed ? 'column' : 'row' }}>
-        <div className="sb-account" role="group" aria-label="Signed-in account" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }} title={currentUser?.name}>
+        <Link to="/profile" className="sb-account" aria-label={`Open ${currentUser?.name || 'your'} profile`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, color: 'inherit', textDecoration: 'none', cursor: 'pointer' }} title="Open profile">
           <span style={{
             width: 36, height: 36, borderRadius: 12, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 18,
             background: roleMeta?.tint,
@@ -194,7 +194,7 @@ export function Sidebar({ collapsed, onToggle, bins = [] }) {
               {roleMeta?.title}{isStudent && currentUser?.usn ? ` · ${currentUser.usn}` : ''}
             </span>
           </span>
-        </div>
+        </Link>
         <button
           type="button"
           onClick={onToggle}

@@ -13,13 +13,13 @@ const RNSIT_BOUNDS = [
 function fillColor(level) {
   if (level >= 80) return '#ef4444';
   if (level >= 60) return '#fbbf24';
-  return '#2784ff';
+  return '#248c52';
 }
 
 function healthColor(health) {
   if (health === 'Needs Attention') return '#fbbf24';
-  if (health === 'Flourishing' || health === 'Excellent') return '#2784ff';
-  return '#8bc0ff';
+  if (health === 'Flourishing' || health === 'Excellent') return '#248c52';
+  return '#74d99b';
 }
 
 export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [], height = '500px' }) {
@@ -241,13 +241,13 @@ export function CampusMap({ bins = [], trees = [], mode = 'bins', routeOrder = [
               transform-origin: bottom center;
               user-select: none;
             ">
-              <img src="/plants/tree-leaf.png" alt="" style="width:26px;height:26px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))" title="${tree.species}" />
+              <span class="tree-map-marker"><img src="/plants/tree-leaf.png" alt="" title="${tree.species}" /></span>
               <div style="
                 width: 5px; height: 5px;
                 border-radius: 50%;
-                background: #2784ff;
-                border: 1px solid #040a14;
-                box-shadow: 0 0 6px #2784ff;
+                background: #248c52;
+                border: 1px solid #06140b;
+                box-shadow: 0 0 6px #248c52;
                 margin-top: -2px;
               "></div>
             </div>

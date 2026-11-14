@@ -31,7 +31,7 @@ const SEED = [
     category: 'BIN_OVERFLOW',
     targetId: 'B-102',
     assignedStaffId: 'staff-001',
-    assignedStaffName: 'Ramesh K.',
+    assignedStaffName: 'Hanuman',
     location: 'Computer Science Block, 2nd Floor Corridor East',
     severity: 'CRITICAL',
     points: 35,
@@ -48,7 +48,7 @@ const SEED = [
     category: 'BIN_OVERFLOW',
     targetId: 'B-103',
     assignedStaffId: 'staff-001',
-    assignedStaffName: 'Ramesh K.',
+    assignedStaffName: 'Hanuman',
     location: 'Food Court, Ground Floor',
     severity: 'CRITICAL',
     points: 0,
@@ -62,6 +62,8 @@ const SEED = [
     id: 'GRD-203',
     title: 'Close a continuously dripping restroom tap',
     category: 'WATER_LEAK',
+    assignedStaffId: 'staff-001',
+    assignedStaffName: 'Hanuman',
     location: 'Mechanical Block, 1st Floor Restroom',
     severity: 'HIGH',
     points: 30,
@@ -82,7 +84,7 @@ const SEED = [
     co2Saved: '~8.5 kg food diverted from landfill',
     detectedBy: 'Hostel Mess Head Broadcast',
     status: 'COMPLETED',
-    claimedBy: { name: 'Sowmyashree S.', usn: '1RN22CS078', time: '10:05' },
+    claimedBy: { name: 'Draupadi', usn: '1RN22CS078', time: '10:05' },
     completedAt: '10:40',
     appliances: 'Hot Holding Insulated Carriers',
     createdAt: Date.now() - 60 * 60e3,
@@ -93,18 +95,29 @@ const SEED = [
 const DETECTIONS = [
   { title: 'Switch off fans & lights in empty CSE Lab 3', category: 'ENERGY_CUTOFF', targetId: 'CAM-02', location: 'Computer Science Block, 2nd Floor', severity: 'CRITICAL', points: 40, co2Saved: '3.9 kg CO2e / hr', detectedBy: 'AI CCTV Sentinel (0 occupants for 16 mins)', appliances: '16 Workstations, 1 AC, 6 Tube Lights' },
   { title: 'Turn off halogen bay lights in empty CAD Annex', category: 'ENERGY_CUTOFF', targetId: 'CAM-04', location: 'Mechanical Workshop Yard, Ground Floor', severity: 'HIGH', points: 40, co2Saved: '2.4 kg CO2e / hr', detectedBy: 'AI CCTV Sentinel (0 occupants for 19 mins)', appliances: '2 Exhaust Fans, Halogen Array, Air Blower' },
-  { title: 'Bin B-207 surged to 94% — swap the liner', category: 'BIN_OVERFLOW', targetId: 'B-207', assignedStaffId: 'staff-001', assignedStaffName: 'Ramesh K.', location: 'Library Block, Ground Floor Lobby', severity: 'CRITICAL', points: 35, co2Saved: 'Prevents overflow litter', detectedBy: 'Ultrasonic HC-SR04 IoT Array', appliances: 'Wet Waste Bin' },
+  { title: 'Bin B-207 surged to 94% — swap the liner', category: 'BIN_OVERFLOW', targetId: 'B-207', assignedStaffId: 'staff-001', assignedStaffName: 'Hanuman', location: 'Library Block, Ground Floor Lobby', severity: 'CRITICAL', points: 35, co2Saved: 'Prevents overflow litter', detectedBy: 'Ultrasonic HC-SR04 IoT Array', appliances: 'Wet Waste Bin' },
   { title: 'Hydrate the sun-stressed Gulmohar #03', category: 'FLORA_CARE', location: 'Cafeteria Outdoor Garden Lawn', severity: 'MEDIUM', points: 25, co2Saved: 'Protects 28 kg CO2/yr capture', detectedBy: 'Soil moisture probe (12% VWC)', appliances: 'Garden Hydration Station #03' },
-  { title: 'Shut a hissing urinal flush valve', category: 'WATER_LEAK', location: 'Civil Block, 2nd Floor Restroom', severity: 'HIGH', points: 30, co2Saved: '~20 litres / hour saved', detectedBy: 'Smart water meter anomaly', appliances: 'Flush Valve #C-11' },
+  { title: 'Shut a hissing urinal flush valve', category: 'WATER_LEAK', assignedStaffId: 'staff-001', assignedStaffName: 'Hanuman', location: 'Civil Block, 2nd Floor Restroom', severity: 'HIGH', points: 30, co2Saved: '~20 litres / hour saved', detectedBy: 'Smart water meter anomaly', appliances: 'Flush Valve #C-11' },
 ];
+
+const isBathroomTask = (task) => /\b(restroom|bathroom|washroom|toilet|urinal|lavatory)\b/i.test(
+  [task?.title, task?.location, task?.appliances, task?.category].filter(Boolean).join(' '),
+);
+const routeToStaff = (task) => isBathroomTask(task)
+  ? {
+      ...task,
+      assignedStaffId: /^(staff|admin)-/i.test(task.assignedStaffId || '') ? task.assignedStaffId : 'staff-001',
+      assignedStaffName: /^(staff|admin)-/i.test(task.assignedStaffId || '') ? task.assignedStaffName || 'Campus Staff' : 'Hanuman',
+    }
+  : task;
 
 function load() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY));
     if (Array.isArray(raw)) {
-      const migrated = raw.map(task => task.category === 'BIN_OVERFLOW'
-        ? { ...task, assignedStaffId: task.assignedStaffId || 'staff-001', assignedStaffName: task.assignedStaffName || 'Ramesh K.' }
-        : task);
+      const migrated = raw.map(task => routeToStaff(task.category === 'BIN_OVERFLOW'
+        ? { ...task, assignedStaffId: task.assignedStaffId || 'staff-001', assignedStaffName: task.assignedStaffName || 'Hanuman' }
+        : task));
       if (!migrated.some(task => task.id === 'GRD-206' || task.targetId === 'B-103' && task.category === 'BIN_OVERFLOW')) {
         migrated.push({ ...SEED.find(task => task.id === 'GRD-206') });
       }
@@ -144,6 +157,7 @@ export function timeAgo(ts) {
 /** Plant rescues go only to Guardians who don't already look after a plant (and never the owner). */
 export function canClaimTask(task, guardian) {
   if (!guardian) return false;
+  if (isBathroomTask(task)) return false;
   if (task.assignedStaffId) return false;
   if (task.ownerId && task.ownerId === guardian.id) return false;
   if (task.eligibility === 'NON_PLANT_OWNER' && guardian.ownsPlant) return false;
@@ -172,6 +186,8 @@ export const guardianTaskService = {
     if (!canClaimTask(task, guardian)) {
       const message = task.assignedStaffId
         ? `This collection task is assigned to ${task.assignedStaffName || 'Ground Staff'}.`
+        : isBathroomTask(task)
+          ? 'Bathroom and restroom maintenance is reserved for campus staff.'
         : task.ownerId === guardian?.id
           ? 'This is your own plant — water it from Adopt-a-Plant.'
           : 'Only Guardians without an adopted plant can take this rescue.';
@@ -247,21 +263,21 @@ export const guardianTaskService = {
   /** A rival Guardian (simulated) grabs the task — used when the alarm times out. */
   rivalClaim(taskId) {
     const rivals = [
-      { name: 'Ananya R.', usn: '1RN23CS102', avatar: '👩‍🎓' },
-      { name: 'Karthik V.', usn: '1RN22ME044', avatar: '🧑‍🔧' },
-      { name: 'Meghana H.', usn: '1RN24EC017', avatar: '👩‍🔬' },
+      { name: 'Subhadra', usn: '1RN23CS102', avatar: '👩‍🎓' },
+      { name: 'Nakula', usn: '1RN22ME044', avatar: '🧑‍🔧' },
+      { name: 'Sahadeva', usn: '1RN24EC017', avatar: '👩‍🔬' },
     ];
     return this.claimTask(taskId, rivals[Math.floor(Math.random() * rivals.length)]);
   },
 
   createTask(newTaskData) {
-    const task = {
+    const task = routeToStaff({
       id: `GRD-${Math.floor(300 + Math.random() * 700)}`,
       status: 'OPEN',
       claimedBy: null,
       createdAt: Date.now(),
       ...newTaskData,
-    };
+    });
     tasks = [task, ...load()];
     save(); notify();
     return task;

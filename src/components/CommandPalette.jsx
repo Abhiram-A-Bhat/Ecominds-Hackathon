@@ -119,9 +119,9 @@ export const CommandPalette = ({ isOpen, onClose, bins = [], salvagedItems = [],
       role="dialog" aria-modal="true" aria-label="Command palette"
     >
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(1,6,3,.65)', backdropFilter: 'blur(6px)', animation: 'fadeIn .2s both' }} />
-      <div style={{
+      <div className="command-palette-panel" style={{
         position: 'relative', width: '100%', maxWidth: 640, overflow: 'hidden',
-        background: 'rgba(5,17,11,.97)', border: '1px solid var(--border-hi)', borderRadius: 20,
+        background: 'var(--surface-solid)', border: '1px solid var(--border-hi)', borderRadius: 20,
         boxShadow: '0 40px 100px -20px rgba(0,0,0,.9), 0 0 0 1px rgba(52,211,153,.06), 0 0 60px -20px rgba(52,211,153,.35)',
         animation: 'revealScale .32s var(--ease-out) both',
       }}>

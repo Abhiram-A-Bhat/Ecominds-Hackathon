@@ -11,9 +11,9 @@ import { MOCK_USERS, findUserByCredentials } from '../data/users';
 import { REWARDS_CATALOG } from '../data/mockData';
 
 export const ROLE_META = {
-  STUDENT: { title: 'Green Guardian', short: 'Guardian', accent: '#34d399', tint: 'rgba(52,211,153,.14)', border: 'rgba(52,211,153,.3)' },
-  STAFF:   { title: 'Eco Ranger',     short: 'Ranger',   accent: '#fb923c', tint: 'rgba(251,146,60,.14)', border: 'rgba(251,146,60,.32)' },
-  ADMIN:   { title: 'Earth Warden',   short: 'Warden',   accent: '#c084fc', tint: 'rgba(192,132,252,.16)', border: 'rgba(192,132,252,.3)' },
+  STUDENT: { title: 'Green Guardian', short: 'Guardian', accent: '#248c52', tint: 'rgba(36,140,82,.14)', border: 'rgba(104,207,145,.3)' },
+  STAFF:   { title: 'Eco Ranger',     short: 'Ranger',   accent: '#248c52', tint: 'rgba(36,140,82,.14)', border: 'rgba(104,207,145,.3)' },
+  ADMIN:   { title: 'Earth Warden',   short: 'Warden',   accent: '#248c52', tint: 'rgba(36,140,82,.14)', border: 'rgba(104,207,145,.3)' },
 };
 
 const AuthContext = createContext(null);
@@ -39,7 +39,7 @@ function hydrate() {
       const merged = seeds.map(s => {
         const saved = byId.get(s.id);
         if (!saved) return s;
-        return { ...s, ...saved, lifetimePoints: Number(saved.lifetimePoints ?? saved.credits ?? s.credits ?? 0) };
+        return { ...s, ...saved, name: s.name, email: s.email, lifetimePoints: Number(saved.lifetimePoints ?? saved.credits ?? s.credits ?? 0) };
       });
       stored.forEach(u => {
         if (u.role === 'STAFF' && !seeds.some(seed => seed.id === u.id)) return;

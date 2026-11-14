@@ -8,6 +8,7 @@ import re
 import sqlite3
 import uuid
 import asyncio
+import socket
 from contextlib import contextmanager
 from urllib.parse import unquote
 from fastapi import FastAPI, HTTPException, File, UploadFile, Response, Request, WebSocket, WebSocketDisconnect
@@ -202,6 +203,31 @@ def health_check():
         ]
     }
 
+@app.get("/api/local-network")
+def local_network_info():
+    """Return the laptop's LAN address so a phone can open the local capture page."""
+    lan_ip = None
+    probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # UDP connect selects the active network interface without sending data.
+        probe.connect(("8.8.8.8", 80))
+        candidate = probe.getsockname()[0]
+        if not candidate.startswith("127."):
+            lan_ip = candidate
+    except OSError:
+        pass
+    finally:
+        probe.close()
+
+    if not lan_ip:
+        try:
+            candidates = socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)
+            lan_ip = next((entry[4][0] for entry in candidates if not entry[4][0].startswith("127.")), None)
+        except OSError:
+            pass
+
+    return {"lanIp": lan_ip}
+
 @app.post("/api/bin-readings")
 def receive_bin_reading(payload: BinSensorReading):
     """Accept one ultrasonic distance sample and convert it to a fill percentage."""
@@ -327,6 +353,8 @@ def detect_waste(payload: ImagePayload):
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         
         model = get_yolo_model()
+        if model is None:
+            return {"success": False, "error": "The local vision model is unavailable. Install the backend requirements and restart the API."}
         detected_objects = []
         best_match = None
         
@@ -339,14 +367,12 @@ def detect_waste(payload: ImagePayload):
                     conf = float(box.conf[0])
                     xyxy = [float(x) for x in box.xyxy[0]]
                     
-                    rule = CAMPUS_WASTE_MAP.get(name, {
-                        "category": "DRY SOLID WASTE",
-                        "isHazardous": False,
-                        "bin": "B-101 (Admin Quadrangle)",
-                        "credits": 10,
-                        "carbon": "0.3 kg CO2e",
-                        "action": "Sort into dry recycling stream."
-                    })
+                    # The bundled detector is a general object model. Only map
+                    # labels with an explicit campus rule; never guess that an
+                    # unrelated object is recyclable or safe to discard.
+                    rule = CAMPUS_WASTE_MAP.get(name)
+                    if not rule:
+                        continue
                     
                     obj = {
                         "name": name.title(),
@@ -367,24 +393,17 @@ def detect_waste(payload: ImagePayload):
                 best_match = detected_objects[0]
         
         if not best_match:
-            best_match = {
-                "name": "General Campus Recyclable",
-                "confidence": "95.2%",
-                "bbox": [50, 50, 300, 300],
-                "category": "DRY RECYCLABLE MATERIAL",
-                "isHazardous": False,
-                "targetBin": "B-101 (Admin Quadrangle Blue Bin)",
-                "ecoCredits": 15,
-                "carbonSavedKg": "0.4 kg CO2e",
-                "action": "Ensure dry and uncontaminated. Handled by campus recycling center."
+            return {
+                "success": False,
+                "error": "No supported object was detected. Try one clear, well-lit photo of a bottle, cup, book, phone, laptop, mouse, keyboard, remote, banana, apple, or sandwich.",
+                "inference_engine": "Ultralytics YOLO general object detector",
             }
-            detected_objects = [best_match]
             
         elapsed_ms = round((time.time() - start_time) * 1000, 1)
         
         return {
             "success": True,
-            "inference_engine": "Ultralytics YOLO26 (NMS-Free)",
+            "inference_engine": "Ultralytics YOLO26 object detector (COCO labels mapped to campus waste rules)",
             "inference_time_ms": elapsed_ms,
             "best_match": best_match,
             "detections": detected_objects

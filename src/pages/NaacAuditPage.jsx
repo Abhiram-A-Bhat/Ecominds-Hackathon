@@ -21,7 +21,7 @@ export const NaacAuditPage = () => {
             NAAC Criterion 7.1.3 Sustainability & E-Waste Audit
           </h1>
           <p className="text-xs text-slate-400">
-            Endpoint: <code className="text-amber-400 font-mono bg-slate-900 px-1.5 py-0.5 rounded">/audit</code> • Official printable compliance document for university accreditation panels.
+            A printable sustainability summary for university accreditation and campus review.
           </p>
         </div>
 
@@ -117,12 +117,12 @@ export const NaacAuditPage = () => {
           <div>
             <div className="font-bold text-slate-900 mb-1">Presented by Team ECO MINDS:</div>
             <div className="text-slate-600 space-y-0.5">
-              <div>• Divyashree S</div>
-              <div>• Sowmyashree S</div>
-              <div>• Kavitha S</div>
-              <div>• Purnima S Mittalkod</div>
-              <div>• Nayana C P</div>
-              <div>• Harshitha P</div>
+              <div>• Draupadi</div>
+              <div>• Subhadra</div>
+              <div>• Vyasa</div>
+              <div>• Parvati</div>
+              <div>• Gargi</div>
+              <div>• Lakshmi</div>
             </div>
           </div>
           <div className="flex flex-col justify-end text-right">

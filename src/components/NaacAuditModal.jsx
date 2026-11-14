@@ -113,12 +113,12 @@ export const NaacAuditModal = ({ isOpen, onClose }) => {
             <div>
               <div className="font-bold text-slate-900 mb-1">Presented by Team ECO MINDS:</div>
               <div className="text-slate-600 space-y-0.5">
-                <div>• Divyashree S</div>
-                <div>• Sowmyashree S</div>
-                <div>• Kavitha S</div>
-                <div>• Purnima S Mittalkod</div>
-                <div>• Nayana C P</div>
-                <div>• Harshitha P</div>
+                <div>• Draupadi</div>
+                <div>• Subhadra</div>
+                <div>• Vyasa</div>
+                <div>• Parvati</div>
+                <div>• Gargi</div>
+                <div>• Lakshmi</div>
               </div>
             </div>
             <div className="flex flex-col justify-end text-right">

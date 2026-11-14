@@ -94,7 +94,7 @@ export function LoginPage() {
   const focusOff = e => { e.currentTarget.style.borderColor = 'var(--border-hi)'; e.currentTarget.style.boxShadow = 'none'; };
 
   return (
-    <div style={{ minHeight: '100vh', position: 'relative', display: 'grid', alignItems: 'center', padding: 'clamp(16px, 4vw, 48px)' }}>
+    <div className="login-page" style={{ minHeight: '100vh', position: 'relative', display: 'grid', alignItems: 'center', padding: 'clamp(16px, 4vw, 48px)' }}>
       <div className="login-theme-toggle"><ThemeToggle /></div>
 
       <div className="login-grid" style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 1120, margin: '0 auto', display: 'grid', gap: 'clamp(28px, 5vw, 72px)', alignItems: 'center' }}>

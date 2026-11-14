@@ -646,7 +646,7 @@ export const CAMPUS_QR_COLLECTION_POINTS = [
     acceptedItems: ['Microcontrollers (Arduino, ESP32, STM32)', 'Sensors & Actuators', 'Jumper Wires & Breadboards', 'Laptop Batteries (Non-Swollen)'],
     rejectedItems: ['Cathode Ray Tubes (CRT)', 'Leaking Lead-Acid Batteries', 'Fluorescent Tubes'],
     openingHours: 'Mon - Sat: 8:30 AM - 5:30 PM',
-    coordinator: 'Dr. Nayana C P (ECE Dept Lead)',
+    coordinator: 'Gargi (ECE Dept Lead)',
     phone: '+91 80 2861 1880'
   },
   {
@@ -656,7 +656,7 @@ export const CAMPUS_QR_COLLECTION_POINTS = [
     acceptedItems: ['Peripherals & Keyboards', 'Power Adapters & Cables', 'USB Drives & RAM Sticks', 'Clean Paper & Cardboard'],
     rejectedItems: ['Liquid Chemical Waste', 'Biohazardous Syringes'],
     openingHours: '24/7 RFID Accessible',
-    coordinator: 'Prof. Sowmyashree S (CSE Dept)',
+    coordinator: 'Prof. Subhadra (CSE Dept)',
     phone: '+91 80 2861 1881'
   },
   {
@@ -676,7 +676,7 @@ export const CAMPUS_QR_COLLECTION_POINTS = [
     acceptedItems: ['Aluminium & Brass Shavings', 'Copper Wires & Heat Sinks', 'Mild Steel Cutoffs', 'Decommissioned Lathe Motors'],
     rejectedItems: ['Unlabeled Solvents', 'Asbestos Insulation'],
     openingHours: 'Mon - Fri: 9:00 AM - 4:30 PM',
-    coordinator: 'Workshop Superintendent K. Ramesh',
+    coordinator: 'Workshop Superintendent K. Hanuman',
     phone: '+91 80 2861 1883'
   }
 ];

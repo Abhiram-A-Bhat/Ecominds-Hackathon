@@ -18,7 +18,7 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
     title: 'Faulty Arduino Mega 2560 & Ultrasonic Kit',
     category: 'Development Boards',
     location: 'ECE Lab Drop-Off Station #1',
-    studentId: '1RN22EC045 (Divyashree S.)',
+    studentId: '1RN22EC045 (Draupadi)',
     condition: 'Non-responsive USB chip, clean PCB',
   });
   const [triageAnswers, setTriageAnswers] = useState({
@@ -38,7 +38,7 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
     tapsNoLeaks: true,
     binsSegregated: true,
     cleanlinessRating: 'GOOD',
-    reporterName: 'Sowmyashree S. (Lab Coordinator)'
+    reporterName: 'Subhadra (Lab Coordinator)'
   });
   const [roomReportSubmitted, setRoomReportSubmitted] = useState(false);
 
@@ -67,8 +67,8 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
       student: mvpItem.studentId,
       location: mvpItem.location,
       status: 'ASSIGNED_TO_COORDINATOR',
-      coordinator: 'Dr. Nayana C P (ECE Lab Head)',
-      technician: 'Ramesh K. (Hardware Specialist)',
+      coordinator: 'Gargi (ECE Lab Head)',
+      technician: 'Hanuman (Hardware Specialist)',
       timestamp: new Date().toLocaleTimeString(),
     };
     setPickupTicket(ticket);
@@ -82,7 +82,7 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
       location: `${mvpItem.location} (RNSIT RR Nagar)`,
       detectedBy: 'Student QR Collection Point Portal',
       assignedTo: {
-        name: 'Dr. Nayana C P & Ramesh K.',
+        name: 'Gargi & Hanuman',
         role: 'Hardware Salvage Coordinator',
         id: 'RNS-COORD-01',
         type: 'STAFF'
@@ -114,7 +114,7 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
         : 'Robotics & Embedded Systems Research Lab Inventory',
       sha256Hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
       timestamp: new Date().toLocaleString(),
-      verifiedBy: 'Prof. Kavitha S. (Audit In-Charge)'
+      verifiedBy: 'Vyasa (Audit In-Charge)'
     };
     setHandoverRecord(record);
     setMvpStep(5);
@@ -148,7 +148,7 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
         location: `${roomChecks.roomNumber} (RNSIT RR Nagar)`,
         detectedBy: `Room Checklist by ${roomChecks.reporterName}`,
         assignedTo: {
-          name: 'Dayanand S.',
+          name: 'Bhima',
           role: 'Building Facilities Supervisor',
           id: 'RNS-FAC-03',
           type: 'STAFF'
@@ -178,14 +178,14 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
             <span>🏆</span> RNSIT Smart Green Campus Matrix
           </h1>
           <p className="text-xs text-slate-300 mt-1 max-w-3xl">
-            Software-First Ideas & Simple-Hardware Shortlist — <strong>40 Practical Ideas</strong> grouped across <strong>10 Categories</strong> with fully functioning live demonstrations.
+            Software-First Ideas & Simple-Hardware Shortlist — <strong>40 Practical Ideas</strong> grouped across <strong>10 Categories</strong>, linked to the closest working demo or prototype flow.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            40/40 Ideas Implemented
+            40 Ideas · Demo Paths
           </span>
           <span className="text-xs font-mono bg-blue-500/10 text-blue-300 border border-blue-500/30 px-3 py-1.5 rounded-xl font-bold">
             Team ECO MINDS
@@ -470,14 +470,14 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-slate-900 p-4 rounded-xl border border-emerald-500/30">
                   <span className="text-[10px] text-emerald-400 font-bold uppercase block">Assigned Faculty Coordinator</span>
-                  <div className="text-sm font-extrabold text-white mt-1">Dr. Nayana C P</div>
+                  <div className="text-sm font-extrabold text-white mt-1">Gargi</div>
                   <div className="text-xs text-slate-400">Associate Professor, Department of ECE</div>
                   <div className="text-[10px] text-slate-500 mt-2">Role: Inspection Approval Authority</div>
                 </div>
 
                 <div className="bg-slate-900 p-4 rounded-xl border border-blue-500/30">
                   <span className="text-[10px] text-blue-400 font-bold uppercase block">Field Hardware Technician</span>
-                  <div className="text-sm font-extrabold text-white mt-1">Ramesh K.</div>
+                  <div className="text-sm font-extrabold text-white mt-1">Hanuman</div>
                   <div className="text-xs text-slate-400">Senior Technical Staff (Electronics Yard)</div>
                   <div className="text-[10px] text-slate-500 mt-2">Role: Benchtop Diagnostics & Triage</div>
                 </div>
@@ -825,7 +825,7 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
                 <div className="pt-2 flex items-center justify-between border-t border-slate-800">
                   <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    Fully Working in Ecominds
+                    Connected demo path
                   </span>
 
                   <button
@@ -1030,7 +1030,7 @@ export const RnsitIdeasPage = ({ userCredits, setUserCredits, onOpenActionMesh }
               <span className="text-emerald-400 font-bold block">✓ Checklist Recorded & Processed!</span>
               <p className="text-slate-300">
                 {!roomChecks.acTurnedOff 
-                  ? "Failed check detected: AC left on. Automated facility dispatch ticket spawned and assigned to Dayanand S. (Facilities Lead)."
+                  ? "Failed check detected: AC left on. Automated facility dispatch ticket spawned and assigned to Bhima (Facilities Lead)."
                   : "All criteria passed. Room condition logged to institutional compliance ledger."}
               </p>
             </div>

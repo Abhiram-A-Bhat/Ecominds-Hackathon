@@ -46,16 +46,13 @@ export function GuardianAlarm({ onOpenMissions }) {
   useEffect(() => {
     if (!currentUser) return;
     try { seen.current = new Set(JSON.parse(sessionStorage.getItem(seenKey)) || []); } catch { seen.current = new Set(); }
-    // A brand-new session absorbs the existing backlog silently; only new detections ring.
-    let primed = seen.current.size > 0;
     return guardianTaskService.subscribe(tasks => {
       const fresh = [];
       tasks.forEach(t => {
         if (seen.current.has(t.id)) return;
         seen.current.add(t.id);
-        if (primed && t.status === 'OPEN' && !t.assignedStaffId && canClaimTask(t, asGuardian(currentUser))) fresh.push(t);
+        if (t.status === 'OPEN' && !t.assignedStaffId && canClaimTask(t, asGuardian(currentUser))) fresh.push(t);
       });
-      primed = true;
       try { sessionStorage.setItem(seenKey, JSON.stringify([...seen.current])); } catch { /* ignore */ }
       if (fresh.length) setQueue(q => [...q, ...fresh]);
       // If the ringing task was taken in another window, flip to "lost"
