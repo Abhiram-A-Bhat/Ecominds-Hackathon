@@ -6,7 +6,7 @@
 // Connect only to the Motorola Edge 40 2.4 GHz hotspot in wifi_credentials.h.
 
 // Laptop's Wi-Fi IPv4 address, not localhost. Update if the laptop's address changes.
-const char* API_URL = "http://192.168.1.43:8000/api/bin-readings";
+const char* API_URL = "http://10.50.45.6:8000/api/bin-readings";
 
 const char* DEVICE_ID = "ESP32-bin-01";
 const char* BIN_ID = "B-101"; // Must match VITE_LIVE_BIN_ID in the laptop's .env.
